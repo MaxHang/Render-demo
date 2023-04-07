@@ -1,0 +1,16 @@
+ply
+format ascii 1.0
+comment PCL generated
+element vertex 5
+property float x
+property float y
+property float z
+property uchar red
+property uchar green
+property uchar blue
+end_header
+-0.25412 -0.11759 0.01171 255 0 255
+0.18866 0.0793 0.00609 255 0 255
+0.03777 0.06232 -0.00753 255 0 255
+-0.25185 -0.08387 -0.01735 255 0 255
+-0.35174 -0.16687 -0.00875 0 255 0

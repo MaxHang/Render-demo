@@ -1,14 +1,14 @@
+import math
+
 import glfw
 import glm
-import math
 import numpy as np
 import OpenGL.GL as gl
 from PIL import Image
 from pyrr import Matrix44
 
-from include.shader_old import Shader
 from include.camera import Camera, CameraMovement
-
+from include.shader_old import Shader
 
 width, height = 800, 600
 

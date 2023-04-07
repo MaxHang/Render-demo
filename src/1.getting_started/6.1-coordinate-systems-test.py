@@ -7,7 +7,6 @@ from pyrr import Matrix44
 
 from include.shader_old import Shader
 
-
 width, height = 800, 600
 
 def main():

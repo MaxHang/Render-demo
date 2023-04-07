@@ -1,15 +1,14 @@
-from ctypes import c_float, sizeof, c_void_p
+import platform
+from ctypes import c_float, c_void_p, sizeof
+
 import glfw
 import glm
 import numpy as np
 import OpenGL.GL as gl
-import platform
 
-
-
+from include.camera import Camera, CameraMovement
 from include.shader import Shader
 from include.texture import load_texture
-from include.camera import Camera, CameraMovement
 
 # -- settings
 SRC_WIDTH = 800

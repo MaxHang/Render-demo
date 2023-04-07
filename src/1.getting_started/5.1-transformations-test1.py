@@ -1,6 +1,7 @@
+import math
+
 import glfw
 import glm
-import math
 import numpy as np
 import OpenGL.GL as gl
 from PIL import Image

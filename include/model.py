@@ -1,11 +1,12 @@
+import ctypes
 import os
 import time
-import ctypes
-import OpenGL.GL as gl
-import assimp_py as assimp
 
+import assimp_py as assimp
+import glm
+import OpenGL.GL as gl
+from mesh import Mesh, Texture, Vec2, Vec3, Vertex
 from PIL import Image
-from mesh import Texture, Mesh, Vertex, Vec2, Vec3
 
 
 class Model:
@@ -13,6 +14,7 @@ class Model:
     def __init__(self, path, gamma=False):
         self.path = path
         self.textures_loaded = set()
+        # self.textures_loaded = list()
         self.meshes = list()
         self.directory = ""
         self.gamma_correction = gamma
@@ -28,6 +30,7 @@ class Model:
         start_time = time.time()
 
         post_process = (assimp.Process_Triangulate |
+                        assimp.Process_GenSmoothNormals |
                         assimp.Process_FlipUVs |
                         assimp.Process_CalcTangentSpace)
         scene = assimp.ImportFile(path, post_process)
@@ -91,6 +94,66 @@ class Model:
 
         return Mesh(vertices, indices, textures)
 
+        # data to fill
+        # vertices = []
+        # indices = []
+        # textures = []
+
+        # # walk through each of the mesh's vertices
+        # for i in range(mesh.num_vertices):
+
+        #     vertices += list(mesh.vertices[i])
+            
+        #     # normals
+        #     if (mesh.normals):
+
+        #         vertices += list(mesh.normals[i][:3])
+                
+        #     else:
+        #         vertices += [0] * 3
+
+        #     # texture coordinates
+        #     if(mesh.texcoords and mesh.texcoords[0] and mesh.tangents and mesh.bitangents): # does the mesh contain texture coordinates?
+                
+        #         # a vertex can contain up to 8 different texture coordinates. We thus make the assumption that we won't 
+        #         # use models where a vertex can have multiple texture coordinates so we always take the first set (0).
+        #         vertices += list(mesh.texcoords[0][i][:2]) + list(mesh.tangents[i][:3]) + list(mesh.bitangents[i][:3])
+
+        #     else:
+        #         vertices += [0] * (2 + 3 + 3)
+
+        # # now wak through each of the mesh's faces (a face is a mesh its triangle) and retrieve the corresponding vertex indices.
+        # for i in range(len(mesh.indices)):
+
+        #     face = mesh.indices[i]
+        #     # retrieve all indices of the face and store them in the indices vector
+        #     indices += list(face)     
+
+        # # process materials
+        # material = scene.materials[mesh.material_index]    
+        # # we assume a convention for sampler names in the shaders. Each diffuse texture should be named
+        # # as 'texture_diffuseN' where N is a sequential number ranging from 1 to MAX_SAMPLER_NUMBER. 
+        # # Same applies to other texture as the following list summarizes:
+        # # diffuse: texture_diffuseN
+        # # specular: texture_specularN
+        # # normal: texture_normalN
+
+        # # 1. diffuse maps
+        # diffuseMaps = self._load_material_textures(material, assimp.TextureType_DIFFUSE, "texture_diffuse")
+        # textures += diffuseMaps
+        # # 2. specular maps
+        # specularMaps = self._load_material_textures(material, assimp.TextureType_SPECULAR, "texture_specular")
+        # textures += specularMaps
+        # # 3. normal maps
+        # normalMaps = self._load_material_textures(material, assimp.TextureType_HEIGHT, "texture_normal")
+        # textures += normalMaps
+        # # 4. height maps
+        # heightMaps = self._load_material_textures(material, assimp.TextureType_AMBIENT, "texture_height")
+        # textures += heightMaps
+        
+        # # return a mesh object created from the extracted mesh data
+        # return Mesh(glm.array.from_numbers(glm.float32, *vertices), indices, textures)
+
     def _load_material_textures(self, mat, type, type_name):
         textures = []
 
@@ -112,10 +175,28 @@ class Model:
 
         return textures
 
+        # textures = []
+        # for i in range(list(mat["TEXTURES"].keys()).count(type)):
+        #     texStr = mat["TEXTURES"][type][i]
+        #     # check if texture was loaded before and if so, continue to next iteration: skip loading a new texture
+        #     if not list(filter(lambda texture: texture.path == texStr, self.textures_loaded)):
+        #         # if texture hasn't been loaded already, load it
+                
+        #         id = TextureFromFile(texStr, self.directory)
+        #         type = type_name
+        #         path = texStr
+
+        #         texture = Texture(id, type, path)
+        #         textures.append(texture)
+        #         self.textures_loaded.append(texture) # store it as texture loaded for entire model, to ensure we won't unnecesery load duplicate textures.
+
+
+        # return textures
+
 
 def TextureFromFile(path, directory, gamma=False):
     textureID = gl.glGenTextures(1)
-    img = Image.open(os.path.join(directory, path))
+    img = Image.open(os.path.join(directory, path)).transpose(Image.Transpose.FLIP_TOP_BOTTOM)
 
     format_ = {
         1 : gl.GL_RED,
@@ -136,5 +217,7 @@ def TextureFromFile(path, directory, gamma=False):
     # -- texture filterting
     gl.glTexParameter(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_LINEAR_MIPMAP_LINEAR)
     gl.glTexParameter(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_LINEAR)
+
+    img.close()
 
     return textureID

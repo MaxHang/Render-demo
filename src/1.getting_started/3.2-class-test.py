@@ -1,14 +1,12 @@
-import glfw
 import math
-import numpy as np
 
+import glfw
+import numpy as np
 from OpenGL.GL import *
 from OpenGL.GL import shaders
 
 from include.IndexBuffer import IndexBuffer
 from include.VertexBuffer import VertexBuffer
-
-
 
 # Vertex Array Object:  VAO
 # Vertex Buffer Object: VBO

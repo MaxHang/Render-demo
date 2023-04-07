@@ -1,15 +1,15 @@
+import platform
+from ctypes import c_float, c_void_p, sizeof
+from pathlib import Path
+
 import glfw
 import glm
-import platform
 import OpenGL.GL as gl
-from pathlib import Path
-from pyrr import Vector3, Matrix44
-from ctypes import c_float, sizeof, c_void_p
+from pyrr import Matrix44, Vector3
 
-
+from include.camera import Camera, CameraMovement
 from include.shader import Shader
 from include.texture import load_texture
-from include.camera import Camera, CameraMovement
 
 # -- settings
 SRC_WIDTH = 800

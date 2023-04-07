@@ -1,6 +1,7 @@
 import OpenGL.GL as gl
 from OpenGL.GL import shaders
 
+
 class Shader:
 
     def __init__(self, file_path) -> None:

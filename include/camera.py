@@ -1,7 +1,7 @@
-import glm
 import math
 from enum import Enum, auto
 
+import glm
 
 #Default camera values
 ZOOM = 45.0
@@ -41,19 +41,23 @@ class Camera:
         """
         return glm.lookAt(self.position, self.position + self.front, self.up)
 
+    def get_zoom(self):
+        return self.zoom
+
     def process_keyboard(self, direction, delta_time):
         """
         processes input received from any keyboard-like input system. Accepts input parameter in the form of camera defined ENUM (to abstract it from windowing systems)
         """
         velocity = self.movement_speed * delta_time
 
-        dir_vector = {
-            CameraMovement.LEFT : -self.right * velocity,
-            CameraMovement.RIGHT : self.right * velocity,
-            CameraMovement.FORWARD : self.front * velocity,
-            CameraMovement.BACKWARD : -self.front * velocity,
-        }.get(direction)
-        self.position += dir_vector
+        if (direction == CameraMovement.FORWARD):
+            self.position += self.front * velocity
+        if (direction == CameraMovement.BACKWARD):
+            self.position -= self.front * velocity
+        if (direction == CameraMovement.LEFT):
+            self.position -= self.right * velocity
+        if (direction == CameraMovement.RIGHT):
+            self.position += self.right * velocity
         # make sure the user stays at the ground level
         # self.position.y = 0.0
 

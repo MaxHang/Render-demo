@@ -1,13 +1,14 @@
 import sys
-import glm
-import glfw
-import OpenGL.GL as gl
 from pathlib import Path
-from pyrr import Vector3, Matrix44
 
+import glfw
+import glm
+import OpenGL.GL as gl
+from pyrr import Matrix44, Vector3
+
+from include.camera import Camera, CameraMovement
 from include.model import Model
 from include.shader import Shader
-from include.camera import Camera, CameraMovement
 
 # -- settings
 SRC_WIDTH = 800

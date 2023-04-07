@@ -1,0 +1,6 @@
+Looking in indexes: https://repo.huaweicloud.com/repository/pypi/simple
+Collecting isort
+  Downloading https://repo.huaweicloud.com/repository/pypi/packages/b8/5b/f18e227df38b94b4ee30d2502fd531bebac23946a2497e5595067a561274/isort-5.10.1-py3-none-any.whl (103 kB)
+     ------------------------------------ 103.4/103.4 kB 284.1 kB/s eta 0:00:00
+Installing collected packages: isort
+Successfully installed isort-5.10.1

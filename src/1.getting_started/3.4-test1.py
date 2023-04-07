@@ -1,10 +1,8 @@
 import glfw
 import numpy as np
-
 from OpenGL.GL import *
 
 from include.shader_old import Shader
-
 
 # Vertex Array Object:  VAO
 # Vertex Buffer Object: VBO

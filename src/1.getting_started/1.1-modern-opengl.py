@@ -1,9 +1,7 @@
 import glfw
 import numpy as np
-
 from OpenGL.GL import *
 from OpenGL.GL import shaders
-
 
 # vertex shaders: determine vertex's position on the screen
 # fragment shaders  or  named pixel shaders: determine pixel's color

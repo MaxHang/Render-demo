@@ -1,13 +1,14 @@
 import sys
-import glm
-import glfw
-import OpenGL.GL as gl
 from pathlib import Path
-from pyrr import Vector3, Matrix44
 
+import glfw
+import glm
+import OpenGL.GL as gl
+from pyrr import Matrix44, Vector3
+
+from include.camera import Camera, CameraMovement
 from include.model import Model
 from include.shader import Shader
-from include.camera import Camera, CameraMovement
 
 # -- settings
 SRC_WIDTH = 800
@@ -48,7 +49,11 @@ def main():
 
     gl.glEnable(gl.GL_DEPTH_TEST)
 
-    model = Model("res/objects/nanosuit/nanosuit.obj")
+    # model = Model("res/objects/nanosuit/nanosuit.obj")
+    # model = Model("res/objects/rock/rock.obj")
+    # model = Model("res/objects/planet/planet.obj")
+    # model = Model("res/objects/cyborg/cyborg.obj")
+    model = Model("res/objects/backpack/backpack.obj")
     model_shader = Shader("src/3.model_loading/shaders/model_loading.vs", "src/3.model_loading/shaders/model_loading.fs")
     # draw in wireframe
     # gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_LINE)
@@ -70,7 +75,7 @@ def main():
         model_shader.use()
 
         # -- view.projection transformations
-        projection = glm.perspective(camera.zoom, SRC_WIDTH/SRC_HEIGHT, 0.1, 100.0)
+        projection = glm.perspective(glm.radians(camera.zoom), SRC_WIDTH/SRC_HEIGHT, 0.1, 100.0)
         view = camera.get_view_matrix()
         model_shader.set_mat4("projection", glm.value_ptr(projection))
         model_shader.set_mat4("view", glm.value_ptr(view))

@@ -1,6 +1,6 @@
-import OpenGL.GL as gl
-from ctypes import c_float, sizeof, c_void_p, Structure
+from ctypes import Structure, c_float, c_void_p, sizeof
 
+import OpenGL.GL as gl
 
 Vec2 = (2 * c_float)
 Vec3 = (3 * c_float)
