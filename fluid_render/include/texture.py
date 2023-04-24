@@ -5,11 +5,14 @@ import OpenGL.GL as gl
 from PIL import Image
 
 RESOURCES    = Path(__file__).absolute().parent.parent.joinpath('resource')
-TEXTURES_DIR = RESOURCES.joinpath('textures')
+FLOOR_DIR = RESOURCES.joinpath('floor')
 SKYBOX_DIR   = RESOURCES.joinpath('skybox')
+# SKYBOX_DIR   = RESOURCES.joinpath('Sky', 'sky02')
+# SKYBOX_DIR   = RESOURCES.joinpath('Sky', 'sky04')
+# SKYBOX_DIR   = RESOURCES.joinpath('Sky', 'sky07')
 
 
-def load_texture(path,
+def load_texture_2D(path,
                  mag_filter=gl.GL_LINEAR,
                  min_filter=gl.GL_LINEAR_MIPMAP_LINEAR,
                  wrap_s=gl.GL_REPEAT, wrap_t=gl.GL_REPEAT,
@@ -17,7 +20,7 @@ def load_texture(path,
                  generate_mipmaps=True):
 
     texture_id = gl.glGenTextures(1)
-    img = Image.open(os.path.join(TEXTURES_DIR, path))
+    img = Image.open(os.path.join(FLOOR_DIR, path))
     img = flip_image(img, flip_x, flip_y)
 
     format_ = {
@@ -84,4 +87,35 @@ def load_cubemap(faces : list[str]) -> int:
     gl.glTexParameteri(gl.GL_TEXTURE_CUBE_MAP, gl.GL_TEXTURE_WRAP_T, gl.GL_CLAMP_TO_EDGE)
     gl.glTexParameteri(gl.GL_TEXTURE_CUBE_MAP, gl.GL_TEXTURE_WRAP_R, gl.GL_CLAMP_TO_EDGE)
 
+    return texture_id
+
+def create_texture_2D(
+    internal_format, 
+    width, height, 
+    src_format, 
+    src_data_type, 
+    min_filter=gl.GL_LINEAR,
+    mag_filter=gl.GL_LINEAR,
+    ):
+    """创建纹理附件
+    
+    :param target_format: 把纹理存储为何种格式
+    :param width
+    :param height       : 纹理的size
+    :param src_fromat   : 源图的格式
+    :param src_data_type: 原图数据类型
+    :param minfilter
+    :param magfilter    : 纹理过滤方式
+
+    :return: 纹理缓冲区的id
+    """
+    texture_id = gl.glGenTextures(1)
+    gl.glBindTexture(gl.GL_TEXTURE_2D, texture_id)
+    gl.glTexImage2D(gl.GL_TEXTURE_2D, 0, internal_format, width, height, 0, src_format, src_data_type, None)
+    gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, min_filter)
+    gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, mag_filter)
+    # borderColor = (0.0, 0.0, 0.0, 1.0)
+    # gl.glTexParameterfv(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_BORDER_COLOR, borderColor); 
+    gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_S, gl.GL_CLAMP_TO_EDGE);
+    gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_T, gl.GL_CLAMP_TO_EDGE);
     return texture_id

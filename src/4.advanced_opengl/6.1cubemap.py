@@ -4,6 +4,7 @@ from pathlib import Path
 
 import glfw
 import glm
+import numpy as np
 import OpenGL.GL as gl
 from pyrr import Matrix44, Vector3
 
@@ -57,6 +58,7 @@ def main():
 
     shader = Shader("src/4.advanced_opengl/shaders/6.1.cubemap.vs", "src/4.advanced_opengl/shaders/6.1.cubemap.fs")
     skybox_shader = Shader("src/4.advanced_opengl/shaders/6.1.skybox.vs", "src/4.advanced_opengl/shaders/6.1.skybox.fs")
+    ground_shader = Shader("src/4.advanced_opengl/shaders/ground.vs", "src/4.advanced_opengl/shaders/ground.fs")
     screen_shader = Shader("src/4.advanced_opengl/shaders/6.1.framebuffer_screen.vs", "src/4.advanced_opengl/shaders/6.1.framebuffer_screen.fs")
 
     cube_vertices = [
@@ -160,6 +162,19 @@ def main():
          1.0,  1.0,  1.0, 1.0,
     ]
 
+    ground_vertices = np.array(
+        [
+        #position, tex coord
+        -5.0, -2.0,  5.0, 0.0, 1.0,
+        -5.0, -2.0, -5.0, 0.0, 0.0,
+        5.0, -2.0, -5.0, 1.0, 0.0,
+        -5.0, -2.0,  5.0, 0.0, 1.0,
+        5.0, -2.0, -5.0, 1.0, 0.0,
+        5.0, -2.0,  5.0, 1.0, 1.0
+        ],
+        dtype= np.float32
+    )
+
     # cube
     cube_vbo = gl.glGenBuffers(1)
     cube_vao = gl.glGenVertexArrays(1)
@@ -175,6 +190,21 @@ def main():
     gl.glVertexAttribPointer(1, 2, gl.GL_FLOAT, gl.GL_FALSE, 5 * sizeof(c_float), c_void_p(3 * sizeof(c_float)))
     gl.glEnableVertexAttribArray(1)
     gl.glBindVertexArray(0)
+
+    # ground
+    m_ground_vao     = gl.glGenVertexArrays(1)
+    ground_vbo       = gl.glGenBuffers(1)
+    gl.glBindVertexArray(m_ground_vao)
+    gl.glBindBuffer(gl.GL_ARRAY_BUFFER, ground_vbo)
+    gl.glBufferData(gl.GL_ARRAY_BUFFER, ground_vertices.nbytes, ground_vertices, gl.GL_STATIC_DRAW)
+    gl.glVertexAttribPointer(0, 3, gl.GL_FLOAT, gl.GL_FALSE, 5 * sizeof(c_float), c_void_p(0))
+    gl.glEnableVertexAttribArray(0)
+    gl.glVertexAttribPointer(1, 2, gl.GL_FLOAT, gl.GL_FALSE, 5 * sizeof(c_float), c_void_p(3 * sizeof(c_float)))
+    gl.glEnableVertexAttribArray(1)
+    gl.glBindVertexArray(0)
+    m_ground_texture = load_texture('marble.jpg')
+    ground_shader.use()
+    ground_shader.set_int('groundTexture', 0)
 
     # skybox
     skybox_vbo = gl.glGenBuffers(1)
@@ -282,6 +312,16 @@ def main():
         model = glm.translate(model, (2.0, -1.0, 0.0))
         shader.set_mat4("model", glm.value_ptr(model))
         gl.glDrawArrays(gl.GL_TRIANGLES, 0, 36)
+
+        model = glm.mat4(1.0)
+        ground_shader.use()
+        ground_shader.set_mat4("projection", glm.value_ptr(projection))
+        ground_shader.set_mat4("view", glm.value_ptr(view))
+        ground_shader.set_mat4('model', glm.value_ptr(model))
+        gl.glBindVertexArray(ground_vbo)
+        gl.glActiveTexture(gl.GL_TEXTURE0)
+        gl.glBindTexture(gl.GL_TEXTURE_2D, m_ground_texture)
+        gl.glDrawArrays(gl.GL_TRIANGLES, 0, 6)
         
         # draw skybox at last
         gl.glDepthFunc(gl.GL_LEQUAL) # 片段深度小于或者等于时通过测试

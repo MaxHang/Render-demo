@@ -235,7 +235,7 @@ def main():
         zoom = camera.get_zoom()
         screenSpacePointZ = SRC_HEIGHT / math.tan(glm.radians(zoom))
         shader.set_float("pointRadius", 0.075)
-        shader.set_float("screenPointZ", screenSpacePointZ)
+        shader.set_float("pointScale", screenSpacePointZ)
 
         gl.glBindVertexArray(point_vao)
         gl.glDrawArrays(gl.GL_POINTS, 0, len(vertices) // 3)

@@ -20,7 +20,6 @@ class Shader:
         shader_source = ""
         with open(path, 'r', encoding='utf-8', errors='ignore') as shader_file:
             shader_source = shader_file.readlines()
-        print(shader_source)
         return shader_source
 
     def use(self):

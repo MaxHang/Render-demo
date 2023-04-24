@@ -217,6 +217,7 @@ def main():
         # -- render
         # 1.第一次处理阶段(Pass)
         gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, framebuffer)
+        print(glfw.get_framebuffer_size(window))
         gl.glClearColor(0.1, 0.1, 0.1, 1.0)
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         gl.glEnable(gl.GL_DEPTH_TEST)
@@ -250,6 +251,7 @@ def main():
 
         # 2.第二次处理阶段
         gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, 0)  # 返回默认缓冲
+        print(glfw.get_framebuffer_size(window))
         gl.glClearColor(0.1, 0.1, 0.1, 1.0)
         gl.glClear(gl.GL_COLOR_BUFFER_BIT)
         gl.glDisable(gl.GL_DEPTH_TEST)

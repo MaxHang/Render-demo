@@ -4,11 +4,11 @@ from enum import Enum, auto
 import glm
 
 # 摄像机参数默认值
-YAW         = -90.0
-PITCH       =  0.0
-SPEED       =  2.5
-SENSITIVITY =  0.1
-ZOOM        =  45.0
+ZOOM = 45.0
+SPEED = 2.5
+YAW = -90.0
+PITCH = 0.0
+SENSITIVITY = 0.1
 
 # Defines several possible options for camera movement. Used as abstraction to stay away from window-system specific input methods
 class CameraMovement(Enum):
@@ -50,19 +50,25 @@ class Camera:
     def get_zoom(self):
         return self.zoom
 
+    def get_pos(self):
+        return self.position
+
     def process_keyboard(self, direction, delta_time):
-        """
-        processes input received from any keyboard-like input system. Accepts input parameter in the form of camera defined ENUM (to abstract it from windowing systems)
+        """processes input received from any keyboard-like input system. Accepts input parameter in the form of camera defined ENUM (to abstract it from windowing systems)
+
+        :param direction: 移动方向
+        :param delta_time: 渲染上一帧所需时间
         """
         velocity = self.m_movement_speed * delta_time
 
-        dir_vector = {
-            CameraMovement.LEFT : -self.right * velocity,
-            CameraMovement.RIGHT : self.right * velocity,
-            CameraMovement.FORWARD : self.front * velocity,
-            CameraMovement.BACKWARD : -self.front * velocity,
-        }.get(direction)
-        self.position += dir_vector
+        if (direction == CameraMovement.FORWARD):
+            self.position += self.front * velocity
+        if (direction == CameraMovement.BACKWARD):
+            self.position -= self.front * velocity
+        if (direction == CameraMovement.LEFT):
+            self.position -= self.right * velocity
+        if (direction == CameraMovement.RIGHT):
+            self.position += self.right * velocity
         # make sure the user stays at the ground level
         # self.position.y = 0.0
 
@@ -85,10 +91,10 @@ class Camera:
         """
         processes input received from a mouse scroll-wheel event. Only requires input on the vertical wheel-axis
         """
-        if self.zoom >= 1.0 and self.zoom <= 45.0:
+        if self.zoom >= 1.0 and self.zoom <= 89.0:
             self.zoom -= yoffset
 
-        self.zoom = max(1.0, min(45.0, self.zoom))
+        self.zoom = max(1.0, min(89.0, self.zoom))
 
     def update_camera_vectors(self):
         """
@@ -105,3 +111,6 @@ class Camera:
         # -- recalc right and up
         self.right = glm.normalize(glm.cross(self.front, self.world_up))
         self.up = glm.normalize(glm.cross(self.right, self.front))
+
+    def print_camera_position(self):
+        """输出摄像机位置"""
