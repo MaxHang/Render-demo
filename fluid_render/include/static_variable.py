@@ -99,9 +99,10 @@ quad_vertices = np.array(
 )
 
 # 粒子半径
-particle_radius = 0.09
 # particle_radius = 0.075
-# particle_radius = 0.1
+# particle_radius = 0.075 * 1.4
+# particle_radius = 0.05
+particle_radius = 0.05 * 1.4
 
 # 远近平面
 near = 0.1

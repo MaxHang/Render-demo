@@ -114,3 +114,4 @@ class Camera:
 
     def print_camera_position(self):
         """输出摄像机位置"""
+        print(f'camera position: {self.position}')

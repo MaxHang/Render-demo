@@ -25,6 +25,7 @@ vec3 uvToEye(vec2 texCoord, float depth){
 void setfragDepth(float viewZ){
 	float ndcZ  = ((far + near) / (far - near) * viewZ + 2.0 * far * near / (far - near)) / viewZ;
 	gl_FragDepth = 0.5 * (gl_DepthRange.diff * ndcZ + gl_DepthRange.far + gl_DepthRange.near);	
+	// gl_FragDepth = 0.99;
 }
 void main(){
     float depth   = texture(depthTexture, texCoord).r;

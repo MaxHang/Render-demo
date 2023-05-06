@@ -27,8 +27,8 @@ class SSFRenderer:
         # camera
         self.m_camera = camera
         # 着色选择
-        self.m_shader_option = ShaderOption.Full
-        # 平湖选择 
+        self.m_shader_option = ShaderOption.MultiFluid
+        # 模糊选择 
         self.m_smooth_option = SmoothOption.BilateralSeperate
         # 平滑次数
         self.m_iterations    = 3
@@ -47,10 +47,14 @@ class SSFRenderer:
         self.m_thick_texture_a  = None
         self.m_thick_texture_b  = None
         self.m_normal_texture   = None
+            # multi_fluid相关, 记录每个像素的厚度流相比
+        self.m_fluid_frac_texture    = None
         # shaders 渲染到纹理附件中
         self.m_get_depth_shader      = None
         self.m_get_thick_shader      = None
-        self.m_restore_normal_shader = None
+            # 多相流厚度流相比shader
+        self.m_get_multi_thick_shader = None
+        self.m_restore_normal_shader  = None
         # shaders 光滑深度纹理 与 光滑次数
         self.m_guassian_shader           = None
         self.m_bilateral_combine_shader  = None
@@ -119,6 +123,13 @@ class SSFRenderer:
             src_format=gl.GL_RGB,
             src_data_type=gl.GL_FLOAT
         )
+        self.m_fluid_frac_texture = create_texture_2D(
+            internal_format=gl.GL_RG32F,
+            width=self.m_width,
+            height=self.m_height,
+            src_format=gl.GL_RG,
+            src_data_type=gl.GL_FLOAT
+        )
         # 创建帧缓冲并且绑定纹理附件
         self.m_fbo = gl.glGenFramebuffers(1)
         gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, self.m_fbo)
@@ -128,13 +139,15 @@ class SSFRenderer:
         gl.glFramebufferTexture2D(gl.GL_FRAMEBUFFER, gl.GL_COLOR_ATTACHMENT2, gl.GL_TEXTURE_2D, self.m_thick_texture_a, 0)
         gl.glFramebufferTexture2D(gl.GL_FRAMEBUFFER, gl.GL_COLOR_ATTACHMENT3, gl.GL_TEXTURE_2D, self.m_depth_texture_b, 0)
         gl.glFramebufferTexture2D(gl.GL_FRAMEBUFFER, gl.GL_COLOR_ATTACHMENT4, gl.GL_TEXTURE_2D, self.m_thick_texture_b, 0)
+        gl.glFramebufferTexture2D(gl.GL_FRAMEBUFFER, gl.GL_COLOR_ATTACHMENT5, gl.GL_TEXTURE_2D, self.m_fluid_frac_texture, 0)
         if (gl.glCheckFramebufferStatus(gl.GL_FRAMEBUFFER) != gl.GL_FRAMEBUFFER_COMPLETE):
             raise RuntimeError("ERROR.FRAMEBUFFER. Framebuffer is not complete!")
         gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, 0)
         # shaders
-        self.m_get_depth_shader      = Shader('ssf_get_depth.vs', 'ssf_get_depth.fs')
-        self.m_get_thick_shader      = Shader('ssf_get_thick.vs', 'ssf_get_thick.fs')
-        self.m_restore_normal_shader = Shader('ssf_restore_normal.vs', 'ssf_restore_normal.fs')
+        self.m_get_depth_shader       = Shader('ssf_get_depth.vs', 'ssf_get_depth.fs')
+        self.m_get_thick_shader       = Shader('ssf_get_thick.vs', 'ssf_get_thick.fs')
+        self.m_get_multi_thick_shader = Shader('ssf_get_multi_thick.vs', 'ssf_get_multi_thick.fs')
+        self.m_restore_normal_shader  = Shader('ssf_restore_normal.vs', 'ssf_restore_normal.fs')
         self.m_rendering_shader          = Shader('ssf_rendering.vs', 'ssf_rendering.fs')
         self.m_guassian_shader           = Shader('depth_guassian_blur.vs', 'depth_guassian_blur.fs')
         self.m_bilateral_combine_shader  = Shader('depth_bilateral_combine_blur.vs', 'depth_bilateral_combine_blur.fs')
@@ -157,14 +170,16 @@ class SSFRenderer:
         """SSF将粒子渲染为光滑流体"""
         self.m_particle_vao = particle_vao
         self.m_particle_num = partical_num
-
         self.m_point_scale = point_scale
         
         self.m_source_ab = True
         self.m_thick_source_ab = True
 
         self.__render_depth()
-        self.__render_thick()
+        if self.m_shader_option == ShaderOption.MultiFluid or self.m_shader_option == ShaderOption.MultiFluid2:
+            self.__render_multi_thick()
+        else:
+            self.__render_thick()
 
         if self.m_smooth_option == SmoothOption.Guassian:
             for _pass in range(self.m_iterations):
@@ -177,18 +192,19 @@ class SSFRenderer:
                 self.__bilateral_combine_blur()
         elif self.m_smooth_option == SmoothOption.BilateralSeperate:
             for _pass in range(self.m_iterations):
-                blur_dir = glm.vec2(1, 0)
-                self.__bilateral_seperate_blur(blur_dir)
                 blur_dir = glm.vec2(0, 1)
+                self.__bilateral_seperate_blur(blur_dir)
+                blur_dir = glm.vec2(1, 0)
                 self.__bilateral_seperate_blur(blur_dir)
         else:
             pass
 
-        for _pass in range(10):
-            blur_dir = glm.vec2(1, 0)
-            self.__smooth_thickness(blur_dir)
-            blur_dir = glm.vec2(0, 1)
-            self.__smooth_thickness(blur_dir)
+        if self.m_smooth_option != SmoothOption.Unsmooth:
+            for _pass in range(10):
+                blur_dir = glm.vec2(1, 0)
+                self.__smooth_thickness(blur_dir)
+                blur_dir = glm.vec2(0, 1)
+                self.__smooth_thickness(blur_dir)
 
         self.__restore_normal()
 
@@ -245,9 +261,42 @@ class SSFRenderer:
         gl.glDrawArrays(gl.GL_POINTS, 0, self.m_particle_num)
         gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, 0)
 
+    def __render_multi_thick(self):
+        """渲染多相流厚度信息到厚度纹理以及流相纹理
+           渲染时关闭深度测试, 开启混合
+        """
+        self.m_get_multi_thick_shader.use()
+        self.m_get_multi_thick_shader.set_mat4('model', self.m_model)
+        self.m_get_multi_thick_shader.set_mat4('view', self.m_view)
+        self.m_get_multi_thick_shader.set_mat4('projection', self.m_projcetion)
+        self.m_get_multi_thick_shader.set_float('pointScale', self.m_point_scale)
+        self.m_get_multi_thick_shader.set_float('particleRadius', particle_radius)
+
+        gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, self.m_fbo)
+        render_buffers = [gl.GL_COLOR_ATTACHMENT2, gl.GL_COLOR_ATTACHMENT5]  # 2为厚度纹理, 5为流相比例纹理
+        render_buffers = (c_uint32 * len(render_buffers))(*render_buffers)
+        gl.glDrawBuffers(2, render_buffers)
+        gl.glDisable(gl.GL_DEPTH_TEST)
+        gl.glEnable(gl.GL_BLEND)
+        gl.glBlendFunc(gl.GL_ONE, gl.GL_ONE) # additive blending, 加法融合, 即原像素值和目标像素值直接相加
+        zero = [0.0]
+        zero = (c_float * len(zero))(*zero)
+        gl.glClearTexImage(self.m_thick_texture_a, 0, gl.GL_RED, gl.GL_FLOAT, zero) # 只在opengl 4.4版本以上使用
+        gl.glClearTexImage(self.m_fluid_frac_texture, 0, gl.GL_RG, gl.GL_FLOAT, zero) # 只在opengl 4.4版本以上使用
+
+        gl.glBindVertexArray(self.m_particle_vao)
+        gl.glDrawArrays(gl.GL_POINTS, 0, self.m_particle_num)
+        gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, 0)
+
     def __gaussian_blur(self, horizontal:int):
+        zoom = glm.radians(self.m_camera.get_zoom())
         self.m_guassian_shader.use()
         self.m_guassian_shader.set_int('horizontal', horizontal)
+        self.m_guassian_shader.set_int('MaxFilterSize', max_filter_size)
+        self.m_guassian_shader.set_int('filterSize', filter_size)
+        self.m_guassian_shader.set_float('zoom', zoom)
+        self.m_guassian_shader.set_float('screenHeight', self.m_height)
+        self.m_guassian_shader.set_float('particleRadius', particle_radius)
         self.__smooth_depth(self.m_guassian_shader)
         self.m_source_ab = not self.m_source_ab
 
@@ -394,9 +443,10 @@ class SSFRenderer:
         self.m_rendering_shader.set_int('normalTexture', 2)
         self.m_rendering_shader.set_int('backGroundTexture', 3)
         self.m_rendering_shader.set_int('skyboxTexture', 4)
+        self.m_rendering_shader.set_int('fluidFracTexture', 5)
         
         # light
-        light_position = glm.vec3(-10, 20, 10)
+        light_position = glm.vec3(5, 5, -5)
         diffuse  = glm.vec3(1.0, 0.5, 0.31)
         ambient  = glm.vec3(1.0, 0.5, 0.31)
         specular = glm.vec3(0.5, 0.5, 0.5)
@@ -413,7 +463,7 @@ class SSFRenderer:
         self.m_rendering_shader.set_vec3('material.ambient' , m_diffuse)
         self.m_rendering_shader.set_vec3('material.diffuse' , m_ambient)
         self.m_rendering_shader.set_vec3('material.specular', m_specular)
-        self.m_rendering_shader.set_float('material.shininess', 32.0)
+        self.m_rendering_shader.set_float('material.shininess', 128.0)
         gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, 0)
         gl.glDisable(gl.GL_DEPTH_TEST)
         gl.glDisable(gl.GL_BLEND)
@@ -428,6 +478,8 @@ class SSFRenderer:
         gl.glBindTexture(gl.GL_TEXTURE_2D, back_ground_texture)
         gl.glActiveTexture(gl.GL_TEXTURE4)
         gl.glBindTexture(gl.GL_TEXTURE_CUBE_MAP, self.m_sky_texture)
+        gl.glActiveTexture(gl.GL_TEXTURE5)
+        gl.glBindTexture(gl.GL_TEXTURE_2D, self.m_fluid_frac_texture)
         gl.glBindVertexArray(self.m_quad_vao)
         gl.glDrawArrays(gl.GL_TRIANGLES, 0, 6)
 

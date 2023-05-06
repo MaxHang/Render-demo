@@ -23,8 +23,8 @@ void main()
         vec2  samplep         = x * blur_dir_offset + texCoord;
         float sampleThickness = texture2D(thickTexture, samplep).r;
         float r               = length(x);
-        // float w               = exp(-r * r / two_sigma2);
-        float w               = 1;
+        float w               = exp(-r * r / two_sigma2);
+        // float w               = 1;
         
         sum  += sampleThickness * w;
         wsum += w;

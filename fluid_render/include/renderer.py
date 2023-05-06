@@ -5,8 +5,8 @@ from ctypes import c_float, c_void_p, sizeof
 import glfw
 import glm
 import numpy as np
-import open3d as o3d
 import OpenGL.GL as gl
+from plyfile import PlyData, PlyElement
 
 from fluid_render.include.buffers import VertexBuffer
 from fluid_render.include.camera import Camera, CameraMovement
@@ -206,7 +206,8 @@ class Renderer:
         gl.glBindVertexArray(0)
         self.m_ground_shader  = Shader('ground.vs', 'ground.fs')
         # self.m_ground_texture = load_texture_2D('white.jpg')
-        self.m_ground_texture = load_texture_2D('stone2.jpg')
+        # self.m_ground_texture = load_texture_2D('stone2.jpg')
+        self.m_ground_texture = load_texture_2D('marble.jpg')
         self.m_ground_shader.use()
         self.m_ground_shader.set_int('groundTexture', 0)
         # 灯
@@ -234,15 +235,17 @@ class Renderer:
         :param path: 包含一帧粒子数据的ply文件路径
         """
         # 读取并绑定粒子数据
-        vertices = read_ply(path)
-        self.m_particle_num = len(vertices) // 3
+        vertices, vertices_stride = read_ply(path)
+        self.m_particle_num = len(vertices) // vertices_stride
         self.m_particle_vbo.set_vbo_data(data=vertices)
         gl.glBindVertexArray(self.m_particle_vao)
         self.m_particle_vbo.bind()
         gl.glEnableVertexAttribArray(0)
-        gl.glVertexAttribPointer(0, 3, gl.GL_FLOAT, gl.GL_FALSE, 3 * sizeof(c_float), c_void_p(0))
+        gl.glVertexAttribPointer(0, 3, gl.GL_FLOAT, gl.GL_FALSE, vertices_stride * sizeof(c_float), c_void_p(0))
+        gl.glEnableVertexAttribArray(1)
+        gl.glVertexAttribPointer(1, 2, gl.GL_FLOAT, gl.GL_FALSE, vertices_stride * sizeof(c_float), c_void_p(3 * sizeof(c_float)))
         gl.glBindVertexArray(0)
-
+        
         if not glfw.window_should_close(self.m_window):
             self.__process_input(self.m_window)
             self.__render()
@@ -265,7 +268,7 @@ class Renderer:
         point_scale = self.m_height * (1.0 / math.tan(glm.radians(zoom)))
         # light
         # light_position = glm.vec3(1.2, 1.0, 2.0)
-        light_position = glm.vec3(-10, 20, 10)
+        light_position = glm.vec3(5, 5, -5)
         diffuse  = glm.vec3(1.0, 0.5, 0.31)
         ambient  = glm.vec3(1.0, 0.5, 0.31)
         specular = glm.vec3(0.5, 0.5, 0.5)
@@ -319,43 +322,6 @@ class Renderer:
 
         gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, 0)
         self.__render_back_ground(light_position)
-
-        # if self.m_lamp_draw_flag:
-        #     lamp_model = glm.translate(light_position)
-        #     lamp_model = glm.scale(lamp_model, [0.2, 0.2, 0.2])
-        #     self.m_lamp_shader.use()
-        #     self.m_lamp_shader.set_mat4('model', lamp_model)
-        #     self.m_lamp_shader.set_mat4('view', self.m_view)
-        #     self.m_lamp_shader.set_mat4('projection', self.m_projection)
-        #     gl.glEnable(gl.GL_DEPTH_TEST)
-        #     gl.glBindVertexArray(self.m_lamp_vao)
-        #     gl.glDrawArrays(gl.GL_TRIANGLES, 0, 36)
-
-        # if self.m_ground_draw_flag:
-        #     self.m_ground_shader.use()
-        #     self.m_ground_shader.set_mat4('model', self.m_model)
-        #     self.m_ground_shader.set_mat4('view', self.m_view)
-        #     self.m_ground_shader.set_mat4('projection', self.m_projection)
-        #     gl.glActiveTexture(gl.GL_TEXTURE0)
-        #     gl.glBindTexture(gl.GL_TEXTURE_2D, self.m_ground_texture)
-        #     gl.glEnable(gl.GL_DEPTH_TEST)
-        #     gl.glBindVertexArray(self.m_ground_vao)
-        #     gl.glDrawArrays(gl.GL_TRIANGLES, 0, 6)
-
-        # if self.m_skybox_draw_flag:
-        #     # 天空盒是以摄像机为中心的，这样不论摄像机移动了多远，天空盒都不会变近, 即移除view矩阵的位移部分
-        #     skybox_view = glm.mat4(glm.mat3(self.m_view))
-        #     self.m_skybox_shader.use()
-        #     self.m_skybox_shader.set_mat4('view', skybox_view)
-        #     self.m_skybox_shader.set_mat4('projection', self.m_projection)
-        #     # 最后渲染天空盒, 在vertex shader中处理天空盒的深度值为1, 即最大, 深度测试时设置片段深度小于或者等于缓冲区时通过测试
-        #     gl.glActiveTexture(gl.GL_TEXTURE0)
-        #     gl.glBindTexture(gl.GL_TEXTURE_CUBE_MAP, self.m_skybox_texture)
-        #     gl.glEnable(gl.GL_DEPTH_TEST)
-        #     gl.glDepthFunc(gl.GL_LEQUAL)
-        #     gl.glBindVertexArray(self.m_skybox_vao)
-        #     gl.glDrawArrays(gl.GL_TRIANGLES, 0, 36)
-        #     gl.glDepthFunc(gl.GL_LESS)
 
     def __render_back_ground(self, light_position:glm.vec3):
         """绘制背景"""
@@ -464,7 +430,7 @@ class Renderer:
         cur_frame_time = glfw.get_time()
         self.delta_time = cur_frame_time - self.pre_frame_time
         self.pre_frame_time = cur_frame_time
-        print(self.delta_time)
+        # print(f'上一帧用用时:{self.delta_time}')
 
     def exit(self):
         return self.m_exit
@@ -472,12 +438,30 @@ class Renderer:
     def print_window_size(self):
         print(f"width{self.m_width}, height{self.m_height}")
 
-def read_ply(path: str)->np.ndarray:
+def read_ply(path: str):
     """读取ply文件包含的粒子数据到ndarry中
 
     :param path: 文件路径
-    :return: 包含粒子位置的ndarry
+
+    :return: 包含粒子位置以及 多相流 粒子的流相比例 的ndarray
     """
-    pcd = o3d.io.read_point_cloud(path)
-    vertices = np.asarray(pcd.points, dtype=np.float32).ravel()
-    return vertices
+    start = glfw.get_time()
+    with open(path, 'rb') as f:
+        plydata = PlyData.read(f)
+    vertices_stride = len(plydata['vertex'].properties)
+    properties = [property.name for property in plydata['vertex'].properties]
+    if 'fluid1_frac' in properties and 'fluid2_frac' in properties:
+        vertices = np.asarray([plydata['vertex']['x'], 
+                            plydata['vertex']['y'], 
+                            plydata['vertex']['z'],
+                            plydata['vertex']['fluid1_frac'],
+                            plydata['vertex']['fluid2_frac'],
+                            ]).T.ravel()
+    else:
+        vertices = np.asarray([plydata['vertex']['x'], 
+                            plydata['vertex']['y'], 
+                            plydata['vertex']['z'],
+                            ]).T.ravel()
+    end = glfw.get_time()
+    # print(f'解析文件用时: {end - start}')
+    return vertices, vertices_stride
