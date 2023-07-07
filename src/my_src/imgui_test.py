@@ -1,11 +1,12 @@
-import platform
+import math
 from ctypes import c_float, c_void_p, sizeof
-from pathlib import Path
 
 import glfw
 import glm
+import imgui
+import numpy as np
+import open3d as o3d
 import OpenGL.GL as gl
-from pyrr import Matrix44, Vector3
 
 from include.camera import Camera, CameraMovement
 from include.model import Model
@@ -17,7 +18,7 @@ SRC_WIDTH = 800
 SRC_HEIGHT = 600
 
 # -- camera
-camera = Camera(glm.vec3([0.0, 0.0, 3.0]))
+camera = Camera(glm.vec3([0.0, 0.0, 8.0]))
 last_x = SRC_WIDTH / 2
 last_y = SRC_HEIGHT / 2
 first_mouse = True
@@ -26,41 +27,41 @@ first_mouse = True
 delta_time = 0.0
 last_frame = 0.0
 
-
 def main():
     global delta_time, last_frame
 
-    if not glfw.init():
-        raise ValueError("Failed to initialize glfw")
-
+    glfw.init()
     glfw.window_hint(glfw.CONTEXT_VERSION_MAJOR, 3)
     glfw.window_hint(glfw.CONTEXT_VERSION_MINOR, 3)
     glfw.window_hint(glfw.OPENGL_PROFILE, glfw.OPENGL_CORE_PROFILE)
 
-    if platform.system() == 'Darwin':
-        glfw.window_hint(glfw.OPENGL_FORWARD_COMPAT, gl.GL_TRUE)
-
-    window = glfw.create_window(SRC_WIDTH, SRC_HEIGHT, "learnOpenGL", None, None)
+    window = glfw.create_window(SRC_WIDTH, SRC_HEIGHT, "LearnOpenGL", None, None)
     if not window:
+        print("Window Creation failed!")
         glfw.terminate()
-        raise ValueError("Failed to create window")
 
     glfw.make_context_current(window)
-    glfw.set_framebuffer_size_callback(window, framebuffer_size_callback)
+    glfw.set_window_size_callback(window, framebuffer_size_callback)
     glfw.set_cursor_pos_callback(window, mouse_callback)
     glfw.set_scroll_callback(window, scroll_callback)
 
     # tell GLFW to capture our mouse
     glfw.set_input_mode(window, glfw.CURSOR, glfw.CURSOR_DISABLED)
 
+    # configure global opengl state
+    # 开启深度测试
     gl.glEnable(gl.GL_DEPTH_TEST)
-    # gl.glDepthFunc(gl.GL_ALWAYS)
+    # gl.glEnable(gl.GL_POINT_SPRITE)
+    gl.glEnable(gl.GL_PROGRAM_POINT_SIZE)
 
+    # gl.glEnable(gl.GL_BLEND)
+    # gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE)
+
+    # ----------------------------------------------------------------------------------------------
+    shader = Shader(r'src/my_src/shaders/1.2.point_sprite.vs', r'src/my_src/shaders/1.2.point_sprite.fs')
     mmodel = Model("res/objects/backpack/backpack.obj")
-    model_shader = Shader("src/4.advanced_opengl/shaders/6.3.model_loading.vs", "src/4.advanced_opengl/shaders/6.3.model_loading.fs")
+    model_shader = Shader("src/3.model_loading/shaders/model_loading.vs", "src/3.model_loading/shaders/model_loading.fs")
     skybox_shader = Shader("src/4.advanced_opengl/shaders/6.1.skybox.vs", "src/4.advanced_opengl/shaders/6.1.skybox.fs")
-    screen_shader = Shader("src/4.advanced_opengl/shaders/6.1.framebuffer_screen.vs", "src/4.advanced_opengl/shaders/6.1.framebuffer_screen.fs")
-
     skybox_vertices = [
         # positions          
         -1.0,  1.0, -1.0,
@@ -105,17 +106,6 @@ def main():
         -1.0, -1.0,  1.0,
          1.0, -1.0,  1.0,
     ]
-
-    quad_vertices = [
-        # positions  also as  texCoords
-        -1.0,  1.0,  0.0, 1.0,
-        -1.0, -1.0,  0.0, 0.0,
-         1.0, -1.0,  1.0, 0.0,
-        -1.0,  1.0,  0.0, 1.0,
-         1.0, -1.0,  1.0, 0.0,
-         1.0,  1.0,  1.0, 1.0,
-    ]
-
     # skybox
     skybox_vbo = gl.glGenBuffers(1)
     skybox_vao = gl.glGenVertexArrays(1)
@@ -127,21 +117,54 @@ def main():
     # -- position attribute
     gl.glVertexAttribPointer(0, 3, gl.GL_FLOAT, gl.GL_FALSE, 3 * sizeof(c_float), c_void_p(0))
     gl.glEnableVertexAttribArray(0)
+    
+    # pcd = o3d.io.read_point_cloud("src/my_src/test.ply")
+    start = glfw.get_time()
+    pcd = o3d.io.read_point_cloud("fluid_render/resource/particles_data/vis_1_0.001/fluid_40.ply")
+    vertices = np.asarray(pcd.points, dtype=np.float32).ravel()
+    print(f"读取文件解析位置用时: {glfw.get_time() - start}")
+    print(len(vertices) // 3)
+    print(vertices)
 
-    # quad
-    quad_vao = gl.glGenVertexArrays(1)
-    quad_vbo = gl.glGenBuffers(1)
-    vertices = (c_float * len(quad_vertices))(*quad_vertices)
-    gl.glBindVertexArray(quad_vao)
-    gl.glBindBuffer(gl.GL_ARRAY_BUFFER, quad_vbo)
-    gl.glBufferData(gl.GL_ARRAY_BUFFER, sizeof(vertices), vertices, gl.GL_STATIC_DRAW)
-    # -- position attribute
-    gl.glVertexAttribPointer(0, 2, gl.GL_FLOAT, gl.GL_FALSE, 4 * sizeof(c_float), c_void_p(0))
+    # point sprite
+
+    point_vao = gl.glGenVertexArrays(1)
+    point_vbo = gl.glGenBuffers(1)
+    gl.glBindVertexArray(point_vao)
+    gl.glBindBuffer(gl.GL_ARRAY_BUFFER, point_vbo)
+    gl.glBufferData(gl.GL_ARRAY_BUFFER, vertices.nbytes, vertices, gl.GL_STATIC_DRAW)
+    # positon attr
     gl.glEnableVertexAttribArray(0)
-    # -- uv attribute
-    gl.glVertexAttribPointer(1, 2, gl.GL_FLOAT, gl.GL_FALSE, 4 * sizeof(c_float), c_void_p(2 * sizeof(c_float)))
-    gl.glEnableVertexAttribArray(1)
-    gl.glBindVertexArray(0)
+    gl.glVertexAttribPointer(0, 3, gl.GL_FLOAT, gl.GL_FALSE, 3 * sizeof(c_float), gl.ctypes.c_void_p(0))
+
+    # point_vertices = [
+    #     # possition3f --- color3f
+    #     -0.5, -0.5, 1.0,  1.0, 0.0, 0.0,
+    #      0.5, -0.5, 0.5,  0.0, 1.0, 0.0,
+    #      0.5,  0.5, 0.7,  0.0, 0.0, 1.0,
+    #     # -0.25412, -0.11759,  0.01171, 255, 0  , 255,
+    #     #  0.18866,  0.0793 ,  0.00609, 255, 0  , 255,
+    #     #  0.03777,  0.06232, -0.00753, 255, 0  , 255,
+    #     # -0.25185, -0.08387, -0.01735, 255, 0  , 255,
+    #     # -0.35174, -0.16687, -0.00875, 0  , 255, 0  ,
+    # ]
+
+    # # point sprite
+    # vertices = (c_float * len(point_vertices))(*point_vertices)
+
+    # point_vao = gl.glGenVertexArrays(1)
+    # point_vbo = gl.glGenBuffers(1)
+    # gl.glBindVertexArray(point_vao)
+    # gl.glBindBuffer(gl.GL_ARRAY_BUFFER, point_vbo)
+    # gl.glBufferData(gl.GL_ARRAY_BUFFER, sizeof(vertices), vertices, gl.GL_STATIC_DRAW)
+    # # positon attr
+    # gl.glEnableVertexAttribArray(0)
+    # gl.glVertexAttribPointer(0, 3, gl.GL_FLOAT, gl.GL_FALSE, 6 * sizeof(c_float), gl.ctypes.c_void_p(0))
+
+
+
+    # load and create a texture----------------------------------------------------------------------------------------------------------
+    texture = load_texture("container.jpg")
 
     faces = [
         "right.jpg",
@@ -151,72 +174,33 @@ def main():
         "front.jpg",
         "back.jpg",
     ]
-    
+
     # load textures
     skybox_texture = load_cubemap(faces)
 
     skybox_shader.use()
     skybox_shader.set_int('skybox', 0)
-
-    screen_shader.use()
-    screen_shader.set_int('screenTexture', 0)
-
-    model_shader.use()
-    model_shader.set_int("skybox", 4)
-
-    # framebuffer configuration
-    # 创建帧缓存对象，并且绑定
-    framebuffer = gl.glGenFramebuffers(1)
-    gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, framebuffer)
-    # 创建纹理图像，将其作为颜色附件附加到帧缓存中，纹理的维度设置为窗口的宽度和高度
-    tex_colorbuffer = gl.glGenTextures(1)
-    gl.glBindTexture(gl.GL_TEXTURE_2D, tex_colorbuffer)
-    gl.glTexImage2D(gl.GL_TEXTURE_2D, 0, gl.GL_RGB, SRC_WIDTH, SRC_HEIGHT, 0, gl.GL_RGB, gl.GL_UNSIGNED_BYTE, None)
-    gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_LINEAR)
-    gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_LINEAR)
-    gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
-    gl.glFramebufferTexture2D(gl.GL_FRAMEBUFFER, gl.GL_COLOR_ATTACHMENT0, gl.GL_TEXTURE_2D, tex_colorbuffer, 0)
-    # create a renderbuffer object for depth and stencil attachment (we won't be sampling these)
-    rbo = gl.glGenRenderbuffers(1)
-    gl.glBindRenderbuffer(gl.GL_RENDERBUFFER, rbo)
-    gl.glRenderbufferStorage(gl.GL_RENDERBUFFER, gl.GL_DEPTH24_STENCIL8, SRC_WIDTH, SRC_HEIGHT)
-    gl.glBindRenderbuffer(gl.GL_RENDERBUFFER, 0)
-    gl.glFramebufferRenderbuffer(gl.GL_FRAMEBUFFER, gl.GL_DEPTH_STENCIL_ATTACHMENT, gl.GL_RENDERBUFFER, rbo)
-    # now that we actually created the framebuffer and added all attachments we want to check if it is actually complete now
-    if (gl.glCheckFramebufferStatus(gl.GL_FRAMEBUFFER) != gl.GL_FRAMEBUFFER_COMPLETE):
-        raise RuntimeError("ERROR.FRAMEBUFFER. Framebuffer is not complete!")
-    gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, 0)
+    
+    i = 0
 
     while not glfw.window_should_close(window):
-        # -- time logic
         current_frame = glfw.get_time()
         delta_time = current_frame - last_frame
+        # print(delta_time)
         last_frame = current_frame
-
-        # -- input
         process_input(window)
 
-        # -- render
-        # 1.第一次处理阶段(Pass), 使用创建的帧缓冲
-        gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, framebuffer)
-        gl.glClearColor(0.1, 0.1, 0.1, 1.0)
+        gl.glClearColor(.2, .3, .3, 1.0)
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-        gl.glEnable(gl.GL_DEPTH_TEST)
 
         # model
         model_shader.use()
-
-        gl.glActiveTexture(gl.GL_TEXTURE4)
-        gl.glBindTexture(gl.GL_TEXTURE_CUBE_MAP, skybox_texture)
-        gl.glActiveTexture(gl.GL_TEXTURE0)
 
         # -- view.projection transformations
         projection = glm.perspective(glm.radians(camera.zoom), SRC_WIDTH/SRC_HEIGHT, 0.1, 100.0)
         view = camera.get_view_matrix()
         model_shader.set_mat4("projection", glm.value_ptr(projection))
         model_shader.set_mat4("view", glm.value_ptr(view))
-        inv_view = glm.inverse(view)
-        model_shader.set_mat4("invView", glm.value_ptr(inv_view))
 
         # -- world transformation
         model = glm.mat4(1.0)
@@ -224,11 +208,41 @@ def main():
         model = glm.scale(model, [0.2, 0.2, 0.2]) 
         model_shader.set_mat4("model", glm.value_ptr(model))
 
-        # -- set camera positon
-        model_shader.set_vec3("cameraPos", glm.value_ptr(camera.position))
-
         mmodel.draw(model_shader)
+
+
+        pcd = o3d.io.read_point_cloud(f"fluid_render/resource/particles_data/vis_1_0.001/fluid_{i}.ply")
+        vertices = np.asarray(pcd.points, dtype=np.float32).ravel()
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, point_vbo)
+        gl.glBufferData(gl.GL_ARRAY_BUFFER, vertices.nbytes, vertices, gl.GL_STATIC_DRAW)
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
+        gl.glBindVertexArray(point_vao)
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, point_vbo)
+        gl.glEnableVertexAttribArray(0)
+        gl.glVertexAttribPointer(0, 3, gl.GL_FLOAT, gl.GL_FALSE, 3 * sizeof(c_float), gl.ctypes.c_void_p(0))
+        gl.glBindVertexArray(0)
         
+        model = glm.mat4(1.0)
+        view = camera.get_view_matrix()
+        projection = glm.perspective(glm.radians(camera.zoom), SRC_WIDTH / SRC_HEIGHT, 0.1, 100.0)
+
+        # print(model, view, projection)
+
+        shader.use()
+        shader.set_mat4('model', glm.value_ptr(model))
+        shader.set_mat4('view', glm.value_ptr(view))
+        shader.set_mat4('projection', glm.value_ptr(projection))
+        # 计算屏幕空间的 d
+        zoom = camera.get_zoom()
+        screenSpacePointZ = SRC_HEIGHT / math.tan(glm.radians(zoom))
+        shader.set_float("pointRadius", 0.075)
+        shader.set_float("pointScale", screenSpacePointZ)
+
+        gl.glBindVertexArray(point_vao)
+        gl.glDrawArrays(gl.GL_POINTS, 0, len(vertices) // 3)
+        if i < 77:
+            i += 1
+
         # draw skybox at last
         gl.glDepthFunc(gl.GL_LEQUAL) # 片段深度小于或者等于时通过测试
         skybox_shader.use()
@@ -242,35 +256,26 @@ def main():
         gl.glDrawArrays(gl.GL_TRIANGLES, 0, 36)
         gl.glBindVertexArray(0)
         gl.glDepthFunc(gl.GL_LESS) # 改回默认
-
-        # 2.第二次处理阶段, 使用默认的帧缓冲, 绘制到屏幕上, 关闭深度测试, 因为只需要将按像素对自建帧缓冲的纹理采样
-        gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, 0)  # 返回默认缓冲
-        gl.glClearColor(0.1, 0.1, 0.1, 1.0)
-        gl.glClear(gl.GL_COLOR_BUFFER_BIT)
-        gl.glDisable(gl.GL_DEPTH_TEST)
-
-        screen_shader.use()
-        gl.glBindVertexArray(quad_vao)
-        gl.glActiveTexture(gl.GL_TEXTURE0)
-        gl.glBindTexture(gl.GL_TEXTURE_2D, tex_colorbuffer)
-        gl.glDrawArrays(gl.GL_TRIANGLES, 0, 6)
-        gl.glBindVertexArray(0)
-
+    
+        # 交换缓存
         glfw.swap_buffers(window)
-        glfw.poll_events()
+        glfw.poll_events() 
 
-    gl.glDeleteVertexArrays(1, id(skybox_vao))
-    gl.glDeleteBuffers(1, id(skybox_vbo))
-    gl.glDeleteVertexArrays(1, id(quad_vao))
-    gl.glDeleteBuffers(1, id(quad_vbo))
-
+    gl.glDeleteVertexArrays(1, id(point_vao))
+    gl.glDeleteBuffers(1, id(point_vbo))
     glfw.terminate()
 
 
+def framebuffer_size_callback(window, w, h):
+    gl.glViewport(0, 0, w, h)
+
+
 def process_input(window):
+    global camera, delta_time
+
     if glfw.get_key(window, glfw.KEY_ESCAPE) == glfw.PRESS:
         glfw.set_window_should_close(window, True)
-
+    
     if glfw.get_key(window, glfw.KEY_W) == glfw.PRESS:
         camera.process_keyboard(CameraMovement.FORWARD, delta_time)
     if glfw.get_key(window, glfw.KEY_S) == glfw.PRESS:
@@ -281,13 +286,14 @@ def process_input(window):
     if glfw.get_key(window, glfw.KEY_D) == glfw.PRESS:
         camera.process_keyboard(CameraMovement.RIGHT, delta_time)
 
-
-def framebuffer_size_callback(window, width, height):
-    gl.glViewport(0, 0, width, height)
-
-
 def mouse_callback(window, xpos, ypos):
-    global first_mouse, last_x, last_y
+    """
+    计算鼠标距上一帧的偏移量。
+    把偏移量添加到摄像机的俯仰角和偏航角中。
+    对偏航角和俯仰角进行最大和最小值的限制。
+    计算方向向量。
+    """
+    global first_mouse, last_x, last_y, camera
 
     if first_mouse:
         last_x, last_y = xpos, ypos
@@ -300,10 +306,10 @@ def mouse_callback(window, xpos, ypos):
 
     camera.process_mouse_movement(xoffset, yoffset)
 
-
-def scroll_callback(window, xoffset, yoffset):
-    camera.process_mouse_scroll(yoffset)
-
+def scroll_callback(window, dx, dy):
+    global camera
+    
+    camera.process_mouse_scroll(dy)
 
 if __name__ == '__main__':
     main()

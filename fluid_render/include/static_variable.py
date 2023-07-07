@@ -51,22 +51,22 @@ skybox_vertices = np.array(
 )
 
 # skybox的六个面
-skybox_faces = [
-    "right.jpg",
-    "left.jpg",
-    "top.jpg",
-    "bottom.jpg",
-    "front.jpg",
-    "back.jpg",
-]
 # skybox_faces = [
-#     "negx.jpg",
-#     "posx.jpg",
-#     "posy.jpg",
-#     "negy.jpg",
-#     "negz.jpg",
-#     "posz.jpg",
+#     "right.jpg",
+#     "left.jpg",
+#     "top.jpg",
+#     "bottom.jpg",
+#     "front.jpg",
+#     "back.jpg",
 # ]
+skybox_faces = [
+    "posx.jpg",
+    "negx.jpg",
+    "posy.jpg",
+    "negy.jpg",
+    "posz.jpg",
+    "negz.jpg",
+]
 
 # 灯
 lamp_vertices = skybox_vertices
@@ -74,15 +74,27 @@ lamp_vertices = skybox_vertices
 ground_vertices = np.array(
     [
 	#position, tex coord
-	-5.0, -2.0,  5.0, 0.0, 1.0,
-	-5.0, -2.0, -5.0, 0.0, 0.0,
-	 5.0, -2.0, -5.0, 1.0, 0.0,
-	-5.0, -2.0,  5.0, 0.0, 1.0,
-	 5.0, -2.0, -5.0, 1.0, 0.0,
-	 5.0, -2.0,  5.0, 1.0, 1.0
+	-5.0, -1.5,  5.0, 0.0, 1.0,
+	-5.0, -1.5, -5.0, 0.0, 0.0,
+	 5.0, -1.5, -5.0, 1.0, 0.0,
+	-5.0, -1.5,  5.0, 0.0, 1.0,
+	 5.0, -1.5, -5.0, 1.0, 0.0,
+	 5.0, -1.5,  5.0, 1.0, 1.0
     ],
     dtype= np.float32
 )
+# ground_vertices = np.array(
+#     [
+# 	#position, tex coord
+# 	-5.0, -2.0,  5.0, 0.0, 1.0,
+# 	-5.0, -2.0, -5.0, 0.0, 0.0,
+# 	 5.0, -2.0, -5.0, 1.0, 0.0,
+# 	-5.0, -2.0,  5.0, 0.0, 1.0,
+# 	 5.0, -2.0, -5.0, 1.0, 0.0,
+# 	 5.0, -2.0,  5.0, 1.0, 1.0
+#     ],
+#     dtype= np.float32
+# )
 
 # 屏幕空间的位置以及纹理
 quad_vertices = np.array(
@@ -99,10 +111,29 @@ quad_vertices = np.array(
 )
 
 # 粒子半径
-# particle_radius = 0.075
-# particle_radius = 0.075 * 1.4
-# particle_radius = 0.05
+particle_radius = 0.1
+# particle_radius = 0.09
+# particle_radius = 0.08
+# particle_radius = 0.07
+# particle_radius = 0.06
 particle_radius = 0.05 * 1.4
+# particle_radius = 0.05
+# particle_radius = 0.04
+# particle_radius = 0.03
+particle_radius = 0.035
+# particle_radius = 0.025
+
+# 010
+# 009
+# 008
+# 007
+# 006
+# 005
+# 004
+# 003
+# 002
+
+
 
 # 远近平面
 near = 0.1
@@ -117,7 +148,8 @@ far  = 100.0
 As the range parameter sigma_r increases, the bilateral filter gradually approaches Gaussian convolution more closely because the range Gaussian widens and flattens, which means that it becomes nearly constant over the intensity interval of the image.
 As the spatial parameter sigma_d increases, the larger features get smoothened.
 """
-max_filter_size = 50
+max_filter_size = 100
+# max_filter_size = 50
 # 双边过滤
 sigma_r = 0.15
 sigma_d = 0.7 * particle_radius

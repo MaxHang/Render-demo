@@ -5,15 +5,6 @@
 // range   范围: 像素值(这里是深度)差异 高斯函数的sigma
 // 一次选择水平或者竖直方向进行过滤
 
-// in vec2 texCoord;
-
-// uniform int filterSize;
-// uniform float sigma_d;
-// uniform float sigma_r;
-// uniform vec2  blur_dir;
-// uniform sampler2D depthTexture;
-
-// out float smoothDepth;
 in vec2 texCoord;
 
 uniform int MaxFilterSize;
@@ -27,8 +18,8 @@ uniform sampler2D depthTexture;
 out float smoothDepth;
 
 
-// const float thresholdRatio = 3.0;
 const float thresholdRatio = 10.0;
+// const float thresholdRatio = 10.0;
 float compute_weight2D(vec2 r, float two_sigma2)
 {
     return exp(-dot(r, r) / two_sigma2);
@@ -46,7 +37,7 @@ void main(){
 
     float pixelDepth = texture(depthTexture, texCoord).r;
     float ratio      = screenHeight / 2.0 / tan(zoom / 2.0);
-    float K          = -filterSize * ratio * particleRadius * 0.05;
+    float K          = -filterSize * ratio * particleRadius * 0.1;
     int   pixelFilterSize = min(MaxFilterSize, int(ceil(K / pixelDepth)));
     float sigma_d = pixelFilterSize / 3.0f;
     float two_sigma_d2 = 2.0f * sigma_d * sigma_d;

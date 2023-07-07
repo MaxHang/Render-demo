@@ -1,22 +1,36 @@
 import math
 import platform
-from ctypes import c_float, c_void_p, sizeof
+from ctypes import c_float, c_int, c_void_p, sizeof
 
 import glfw
 import glm
 import numpy as np
 import OpenGL.GL as gl
+import time
 from plyfile import PlyData, PlyElement
 
 from fluid_render.include.buffers import VertexBuffer
 from fluid_render.include.camera import Camera, CameraMovement
+from fluid_render.include.gui_params import ShaderOption
 from fluid_render.include.shader import Shader
 from fluid_render.include.ssf_renderer import SSFRenderer
 from fluid_render.include.static_variable import far, near, particle_radius, skybox_faces, skybox_vertices, lamp_vertices, ground_vertices
 from fluid_render.include.texture import load_cubemap, load_texture_2D, create_texture_2D
 
-WINDOW_WIDTH  = 1200
-WINDOW_HEIGHT = 1000
+WINDOW_WIDTH  = 1000
+WINDOW_HEIGHT = 800
+# WINDOW_WIDTH  = 840
+# WINDOW_HEIGHT = 720
+# WINDOW_WIDTH  = 1200
+# WINDOW_HEIGHT = 1000
+# WINDOW_WIDTH  = 720
+# WINDOW_HEIGHT = 480
+# WINDOW_WIDTH  = 1280
+# WINDOW_HEIGHT = 800
+# WINDOW_WIDTH  = 1920
+# WINDOW_HEIGHT = 1080
+# WINDOW_WIDTH  = 2160
+# WINDOW_HEIGHT = 1440
 
 class Renderer:
     """粒子渲染器, 可选渲染天空盒, 粒子地面, 待扩展GUI以及SSF(Screen Space Fluid Rendering)"""
@@ -58,9 +72,9 @@ class Renderer:
             :灯        : 可选
         """
         self.m_skybox_draw_flag    = True
-        self.m_lamp_draw_flag      = True
-        self.m_ground_draw_flag    = True
-        self.m_ssf_fluid_draw_flag = True
+        self.m_lamp_draw_flag      = False
+        self.m_ground_draw_flag    = False
+        self.m_ssf_fluid_draw_flag = False
         # backGround
         self.m_back_ground_fbo     = None
         self.m_back_ground_texture = None
@@ -118,6 +132,17 @@ class Renderer:
         self.pre_y          = None
         self.first_mouse    = None
 
+        self.particle_data_time = None
+        self._render_time = None
+        self.render_time = None
+        self.read_time  = None
+        self.ssf_time   = None
+
+        '''OpenGL的查询机制,这里用于时间戳的查询, 用来获取指令运行的时长'''
+        # self.queries         = None
+        # self.ssf_time_buf    = None
+        # self.render_time_buf = None
+
         self.__init()
 
 
@@ -139,6 +164,8 @@ class Renderer:
             glfw.terminate()
             raise ValueError("Failed to create window")
         glfw.make_context_current(self.m_window)
+
+        glfw.set_window_pos(self.m_window, 100, 100)
         # 绑定回调函数
         self.__bind()
 
@@ -229,13 +256,22 @@ class Renderer:
         self.pre_y          = 0.0
         self.first_mouse    = True
 
+        '''OpenGL查询'''
+        # self.queries         = gl.glGenQueries(1)
+        # self.ssf_time_buf    = (c_int * 1)(*[0])
+        # self.render_time_buf = (c_int * 1)(*[0])
+
     def render(self, path:str):
         """渲染一帧
         
         :param path: 包含一帧粒子数据的ply文件路径
         """
         # 读取并绑定粒子数据
-        vertices, vertices_stride = read_ply(path)
+        read_start = time.perf_counter()
+        vertices, vertices_stride = read_ply(path, self.m_ssf_renderer.m_shader_option)
+        self.read_time = time.perf_counter() - read_start
+
+        # particle_data_start = time.perf_counter()
         self.m_particle_num = len(vertices) // vertices_stride
         self.m_particle_vbo.set_vbo_data(data=vertices)
         gl.glBindVertexArray(self.m_particle_vao)
@@ -245,18 +281,22 @@ class Renderer:
         gl.glEnableVertexAttribArray(1)
         gl.glVertexAttribPointer(1, 2, gl.GL_FLOAT, gl.GL_FALSE, vertices_stride * sizeof(c_float), c_void_p(3 * sizeof(c_float)))
         gl.glBindVertexArray(0)
-        
+        # self.particle_data_time = time.perf_counter() - particle_data_start
+    
+        render_start = time.perf_counter()
         if not glfw.window_should_close(self.m_window):
             self.__process_input(self.m_window)
+            # _render_start = time.perf_counter()
             self.__render()
+            # self._render_time = time.perf_counter() - _render_start
         else:
             self.__delete()
             self.m_exit = True
             glfw.terminate()
-
+        self.render_time = time.perf_counter() - render_start
         glfw.swap_buffers(self.m_window)
         glfw.poll_events()
-        
+
     def __render(self):
         """渲染一帧, OpenGL相关"""
         # 得到变换矩阵
@@ -284,14 +324,14 @@ class Renderer:
         gl.glClearColor(0.2, 0.3, 0.3, 1.0)
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
 
-        # # 测试背景
-        # self.test_shader.use()
-        # self.test_shader.set_int('screenTexture', 0)
-        # gl.glDisable(gl.GL_DEPTH_TEST)
-        # gl.glActiveTexture(gl.GL_TEXTURE0)
-        # gl.glBindTexture(gl.GL_TEXTURE_2D, self.m_back_ground_texture)
-        # gl.glBindVertexArray(self.m_ssf_renderer.m_quad_vao)
-        # gl.glDrawArrays(gl.GL_TRIANGLES, 0, 6)
+        # 测试背景
+        self.test_shader.use()
+        self.test_shader.set_int('screenTexture', 0)
+        gl.glDisable(gl.GL_DEPTH_TEST)
+        gl.glActiveTexture(gl.GL_TEXTURE0)
+        gl.glBindTexture(gl.GL_TEXTURE_2D, self.m_back_ground_texture)
+        gl.glBindVertexArray(self.m_ssf_renderer.m_quad_vao)
+        gl.glDrawArrays(gl.GL_TRIANGLES, 0, 6)
         
 
         # 先渲染粒子或者流体数据
@@ -300,7 +340,6 @@ class Renderer:
             self.m_particle_shader.set_mat4('model', self.m_model)
             self.m_particle_shader.set_mat4('view', self.m_view)
             self.m_particle_shader.set_mat4('projection', self.m_projection)
-            # print(screen_space_point_z)
             self.m_particle_shader.set_float('particleRadius', particle_radius)
             self.m_particle_shader.set_float('pointScale', point_scale)
             # ligth
@@ -316,9 +355,10 @@ class Renderer:
             gl.glEnable(gl.GL_DEPTH_TEST)
             gl.glBindVertexArray(self.m_particle_vao)
             gl.glDrawArrays(gl.GL_POINTS, 0, self.m_particle_num)
-            # gl.glDrawArrays(gl.GL_POINTS, 0, 10)
         else:
+            ssf_start = time.perf_counter()
             self.m_ssf_renderer.render(self.m_particle_vao, self.m_particle_num, point_scale, self.m_back_ground_texture)
+            self.ssf_time = time.perf_counter() - ssf_start
 
         gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, 0)
         self.__render_back_ground(light_position)
@@ -432,36 +472,42 @@ class Renderer:
         self.pre_frame_time = cur_frame_time
         # print(f'上一帧用用时:{self.delta_time}')
 
+    def get_delta_time(self):
+        """返回上一帧渲染时间"""
+        return self.delta_time
+
     def exit(self):
         return self.m_exit
 
     def print_window_size(self):
         print(f"width{self.m_width}, height{self.m_height}")
 
-def read_ply(path: str):
+def read_ply(path:str, shader_option:ShaderOption):
     """读取ply文件包含的粒子数据到ndarry中
 
     :param path: 文件路径
 
     :return: 包含粒子位置以及 多相流 粒子的流相比例 的ndarray
     """
-    start = glfw.get_time()
     with open(path, 'rb') as f:
         plydata = PlyData.read(f)
-    vertices_stride = len(plydata['vertex'].properties)
+    # vertices_stride = len(plydata['vertex'].properties)
     properties = [property.name for property in plydata['vertex'].properties]
-    if 'fluid1_frac' in properties and 'fluid2_frac' in properties:
+    if 'fluid1_frac' in properties and 'fluid2_frac' in properties and shader_option in [ShaderOption.MultiFluid, ShaderOption.MultiFrac, ShaderOption.MultiAttenuation, ShaderOption.MultiRefract]:
         vertices = np.asarray([plydata['vertex']['x'], 
                             plydata['vertex']['y'], 
                             plydata['vertex']['z'],
                             plydata['vertex']['fluid1_frac'],
                             plydata['vertex']['fluid2_frac'],
-                            ]).T.ravel()
+                            ],dtype=np.float32).T.ravel()
+        vertices_stride = 5
     else:
         vertices = np.asarray([plydata['vertex']['x'], 
                             plydata['vertex']['y'], 
                             plydata['vertex']['z'],
-                            ]).T.ravel()
-    end = glfw.get_time()
-    # print(f'解析文件用时: {end - start}')
+                            ],dtype=np.float32).T.ravel()
+        vertices_stride = 3
+    # vertices = np.append(vertices, [0,0,2,1,0])
+    # vertices = np.asarray([0,0,2,1,0],dtype=np.float32)
+    # vertices_stride = 5
     return vertices, vertices_stride

@@ -46,12 +46,14 @@ void main(){
 					texture(depthTexture, texCoord + vec2(0.0f,depthTexelSize.y)).r) - eyeSpacePos;
 	vec3 ddyBottom = eyeSpacePos - uvToEye(texCoord - vec2(0.0f,depthTexelSize.y),
 					texture(depthTexture, texCoord - vec2(0.0f,depthTexelSize.y)).r);
+	// vec3 dx = ddxRight;
+	// vec3 dy = ddyTop;
 	vec3 dx = ddxLeft;
-	vec3 dy = ddyTop;
+	vec3 dy = ddyBottom;
 	if(abs(ddxRight.z) < abs(ddxLeft.z))
 		dx = ddxRight;
-	if(abs(ddyBottom.z) < abs(ddyTop.z))
-		dy = ddyBottom;
+	if(abs(ddyTop.z) < abs(ddyBottom.z))
+		dy = ddyTop;
 	normal = normalize(cross(dx, dy));
 }
 

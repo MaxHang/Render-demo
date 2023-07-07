@@ -30,3 +30,13 @@ void main(){
     gl_FragDepth = 0.5*(gl_DepthRange.diff * ndcZ + gl_DepthRange.far  + gl_DepthRange.near);
     viewSpaceDepth = pixelViewSpacePos.z;
 }
+
+// void main(){
+//     vec3 normal;
+//     normal.xy = gl_PointCoord.xy * vec2(2.0, -2.0) + vec2(-1.0, 1.0);
+//     float r2  = dot(normal.xy, normal.xy);
+//     if(r2 > 1.0)
+//         discard; 
+//     normal.z  = sqrt(1.0 - r2);
+//     float pixelDepth = viewSpacePos.z + normal.z * particleRadius;
+// }

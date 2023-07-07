@@ -7,8 +7,11 @@ from PIL import Image
 RESOURCES    = Path(__file__).absolute().parent.parent.joinpath('resource')
 FLOOR_DIR = RESOURCES.joinpath('floor')
 SKYBOX_DIR   = RESOURCES.joinpath('skybox')
+# SKYBOX_DIR   = RESOURCES.joinpath('Sky', 'sky01')
 # SKYBOX_DIR   = RESOURCES.joinpath('Sky', 'sky02')
 # SKYBOX_DIR   = RESOURCES.joinpath('Sky', 'sky04')
+SKYBOX_DIR   = RESOURCES.joinpath('Sky', 'sky05')
+# SKYBOX_DIR   = RESOURCES.joinpath('Sky', 'sky07')
 # SKYBOX_DIR   = RESOURCES.joinpath('Sky', 'sky07')
 
 

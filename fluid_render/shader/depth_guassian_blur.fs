@@ -23,7 +23,7 @@ void main(){
     float pixelDepth = texture(depthTexture, texCoord).r;
 
     float ratio      = screenHeight / 2.0 / tan(zoom / 2.0);
-    float K          = -filterSize * ratio * particleRadius * 0.03;
+    float K          = -filterSize * ratio * particleRadius * 0.1;
     int   filterSize_pixel = min(MaxFilterSize, int(ceil(K / pixelDepth)));
     float sigma      = filterSize_pixel / 3.0f;
     float two_sigma2 = 2.0f * sigma * sigma;
@@ -38,12 +38,12 @@ void main(){
     vec2 w2;
     for(int x = 1; x <= filterSize_pixel; ++x){
         sample_tex += dtc;
-        // dist       += dr;
-        dist        = x;
+        dist       += dr;
 
         sample_depth.x = texture(depthTexture, sample_tex.xy).r;
         sample_depth.y = texture(depthTexture, sample_tex.zw).r;
-        w2             = vec2(compute_weight1D(dist, two_sigma2));
+        // w2             = vec2(compute_weight1D(dist, two_sigma2));
+        w2             = vec2(compute_weight1D(x, two_sigma2));
         // w2             = vec2(1);
 
         sum2  += sample_depth * w2;

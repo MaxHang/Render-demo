@@ -4,7 +4,9 @@ from enum import Enum, auto
 import glm
 
 # 摄像机参数默认值
-ZOOM = 45.0
+ZOOM = 55.0
+# ZOOM = 45.0
+# SPEED = 1.0
 SPEED = 2.5
 YAW = -90.0
 PITCH = 0.0
@@ -24,7 +26,6 @@ class Camera:
         # 摄像机位置
         self.position = position
         # 摄像机空间
-        self.front = glm.vec3([0.0, 0.0, -1.0])
         self.right = glm.vec3()
         self.up = glm.vec3()
         # 世界空间中 向上 的向量, 用于计算摄像机空间的right
@@ -115,3 +116,4 @@ class Camera:
     def print_camera_position(self):
         """输出摄像机位置"""
         print(f'camera position: {self.position}')
+        print(f'camera yaw pitch: {self.yaw, self.pitch}')
