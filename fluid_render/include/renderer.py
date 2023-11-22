@@ -74,7 +74,7 @@ class Renderer:
         self.m_skybox_draw_flag    = True
         self.m_lamp_draw_flag      = False
         self.m_ground_draw_flag    = False
-        self.m_ssf_fluid_draw_flag = False
+        self.m_ssf_fluid_draw_flag = True
         # backGround
         self.m_back_ground_fbo     = None
         self.m_back_ground_texture = None
@@ -234,7 +234,10 @@ class Renderer:
         self.m_ground_shader  = Shader('ground.vs', 'ground.fs')
         # self.m_ground_texture = load_texture_2D('white.jpg')
         # self.m_ground_texture = load_texture_2D('stone2.jpg')
-        self.m_ground_texture = load_texture_2D('marble.jpg')
+        # self.m_ground_texture = load_texture_2D('stone3.jpg')
+        self.m_ground_texture = load_texture_2D('wood.jpg')
+        # self.m_ground_texture = load_texture_2D('blue_marble.png')
+        # self.m_ground_texture = load_texture_2D('marble.jpg')
         self.m_ground_shader.use()
         self.m_ground_shader.set_int('groundTexture', 0)
         # 灯
@@ -278,8 +281,9 @@ class Renderer:
         self.m_particle_vbo.bind()
         gl.glEnableVertexAttribArray(0)
         gl.glVertexAttribPointer(0, 3, gl.GL_FLOAT, gl.GL_FALSE, vertices_stride * sizeof(c_float), c_void_p(0))
-        gl.glEnableVertexAttribArray(1)
-        gl.glVertexAttribPointer(1, 2, gl.GL_FLOAT, gl.GL_FALSE, vertices_stride * sizeof(c_float), c_void_p(3 * sizeof(c_float)))
+        if vertices_stride > 3:
+            gl.glEnableVertexAttribArray(1)
+            gl.glVertexAttribPointer(1, vertices_stride - 3, gl.GL_FLOAT, gl.GL_FALSE, vertices_stride * sizeof(c_float), c_void_p(3 * sizeof(c_float)))
         gl.glBindVertexArray(0)
         # self.particle_data_time = time.perf_counter() - particle_data_start
     
@@ -325,13 +329,13 @@ class Renderer:
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
 
         # 测试背景
-        self.test_shader.use()
-        self.test_shader.set_int('screenTexture', 0)
-        gl.glDisable(gl.GL_DEPTH_TEST)
-        gl.glActiveTexture(gl.GL_TEXTURE0)
-        gl.glBindTexture(gl.GL_TEXTURE_2D, self.m_back_ground_texture)
-        gl.glBindVertexArray(self.m_ssf_renderer.m_quad_vao)
-        gl.glDrawArrays(gl.GL_TRIANGLES, 0, 6)
+        # self.test_shader.use()
+        # self.test_shader.set_int('screenTexture', 0)
+        # gl.glDisable(gl.GL_DEPTH_TEST)
+        # gl.glActiveTexture(gl.GL_TEXTURE0)
+        # gl.glBindTexture(gl.GL_TEXTURE_2D, self.m_back_ground_texture)
+        # gl.glBindVertexArray(self.m_ssf_renderer.m_quad_vao)
+        # gl.glDrawArrays(gl.GL_TRIANGLES, 0, 6)
         
 
         # 先渲染粒子或者流体数据
@@ -493,19 +497,26 @@ def read_ply(path:str, shader_option:ShaderOption):
         plydata = PlyData.read(f)
     # vertices_stride = len(plydata['vertex'].properties)
     properties = [property.name for property in plydata['vertex'].properties]
-    if 'fluid1_frac' in properties and 'fluid2_frac' in properties and shader_option in [ShaderOption.MultiFluid, ShaderOption.MultiFrac, ShaderOption.MultiAttenuation, ShaderOption.MultiRefract]:
-        vertices = np.asarray([plydata['vertex']['x'], 
-                            plydata['vertex']['y'], 
-                            plydata['vertex']['z'],
-                            plydata['vertex']['fluid1_frac'],
-                            plydata['vertex']['fluid2_frac'],
-                            ],dtype=np.float32).T.ravel()
-        vertices_stride = 5
+    if shader_option in [ShaderOption.MultiFluid, ShaderOption.MultiFrac, ShaderOption.MultiAttenuation, ShaderOption.MultiRefract]:
+        vertices_data = [
+            plydata['vertex']['x'], 
+            plydata['vertex']['y'], 
+            plydata['vertex']['z'],
+        ]
+        vertices_stride = 3
+        for i in range(1, 5):
+            if f'fluid{i}_frac' in properties:
+                vertices_stride += 1
+                vertices_data.append(plydata['vertex'][f'fluid{i}_frac'])
+            else:
+                break
+        vertices = np.asarray(vertices_data, dtype=np.float32).T.ravel()
     else:
-        vertices = np.asarray([plydata['vertex']['x'], 
-                            plydata['vertex']['y'], 
-                            plydata['vertex']['z'],
-                            ],dtype=np.float32).T.ravel()
+        vertices = np.asarray([
+            plydata['vertex']['x'], 
+            plydata['vertex']['y'], 
+            plydata['vertex']['z'],
+            ], dtype=np.float32).T.ravel()
         vertices_stride = 3
     # vertices = np.append(vertices, [0,0,2,1,0])
     # vertices = np.asarray([0,0,2,1,0],dtype=np.float32)

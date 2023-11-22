@@ -1,4 +1,5 @@
 import numpy as np
+import glm
 from fluid_render.include.helper import cal_fresnel_R0
 from fluid_render.include.gui_params import filter_size
 
@@ -59,14 +60,30 @@ skybox_vertices = np.array(
 #     "front.jpg",
 #     "back.jpg",
 # ]
+# skybox_faces = [
+#     "posx.jpg",
+#     "negx.jpg",
+#     "posy.jpg",
+#     "negy.jpg",
+#     "posz.jpg",
+#     "negz.jpg",
+# ]
 skybox_faces = [
-    "posx.jpg",
-    "negx.jpg",
-    "posy.jpg",
-    "negy.jpg",
-    "posz.jpg",
-    "negz.jpg",
+    "posx.png",
+    "negx.png",
+    "posy.png",
+    "negy.png",
+    "posz.png",
+    "negz.png",
 ]
+# skybox_faces = [
+#     "posx.png",
+#     "negx.png",
+#     "posy.png",
+#     "negy.png",
+#     "posz.png",
+#     "negz.png",
+# ]
 
 # 灯
 lamp_vertices = skybox_vertices
@@ -115,12 +132,11 @@ particle_radius = 0.1
 # particle_radius = 0.09
 # particle_radius = 0.08
 # particle_radius = 0.07
-# particle_radius = 0.06
-particle_radius = 0.05 * 1.4
+particle_radius = 0.06
 # particle_radius = 0.05
 # particle_radius = 0.04
 # particle_radius = 0.03
-particle_radius = 0.035
+# particle_radius = 0.035
 # particle_radius = 0.025
 
 # 010
@@ -171,3 +187,13 @@ n_water = 1.33
 n_air   = 1.0
 refractive_index = n_water / n_air
 R0_air_to_water = cal_fresnel_R0(n_air, n_water)
+# R0_air_to_water = 0.5
+# R0_air_to_water = 1.0
+
+"""材质信息
+"""
+emerald_material = glm.vec3(0.0215, 0.1745, 0.0215), glm.vec3(0.07568, 0.61424, 0.07568), glm.vec3(0.633, 0.727811, 0.633), 0.6
+pearl_material = glm.vec3(0.25, 0.20725, 0.20725), glm.vec3(1.0, 0.829, 0.829), glm.vec3(0.296648, 0.296648, 0.296648), 0.088
+
+
+material = emerald_material

@@ -54,7 +54,15 @@ void main(){
 		dx = ddxRight;
 	if(abs(ddyTop.z) < abs(ddyBottom.z))
 		dy = ddyTop;
-	normal = normalize(cross(dx, dy));
+
+	//Compute Gradients of Depth and Cross Product Them to Get Normal
+    vec3 N = normalize(cross(dx, dy));
+    if(isnan(N.x) || isnan(N.y) || isnan(N.y) ||
+       isinf(N.x) || isinf(N.y) || isinf(N.z)) {
+        N = vec3(0, 0, 1);
+    }
+
+	normal = N;
 }
 
 // void main(){

@@ -1,16 +1,13 @@
 from ctypes import c_float, c_int, c_uint32, c_void_p, sizeof
 
-import glfw
 import glm
-import numpy as np
 import OpenGL.GL as gl
-import time
 
 from fluid_render.include.buffers import VertexBuffer
 from fluid_render.include.camera import Camera
 from fluid_render.include.gui_params import SmoothOption, ShaderOption, filter_size
 from fluid_render.include.shader import Shader
-from fluid_render.include.static_variable import far, near, R0_air_to_water, refractive_index, particle_radius, quad_vertices, two_sigma_r2, two_sigma_d2, sigma_r, sigma_d, max_filter_size
+from fluid_render.include.static_variable import far, near, R0_air_to_water, refractive_index, particle_radius, quad_vertices, max_filter_size, material
 from fluid_render.include.texture import create_texture_2D
 
 class SSFRenderer:
@@ -31,9 +28,9 @@ class SSFRenderer:
         self.m_camera = camera
         # 着色选择
         # self.m_shader_option = ShaderOption.Depth
-        self.m_shader_option = ShaderOption.Full
+        self.m_shader_option = ShaderOption.MultiFluid
         # 模糊选择 
-        self.m_smooth_option = SmoothOption.NarrowRange
+        self.m_smooth_option = SmoothOption.BilateralGaussian
         # 平滑次数
         self.m_iterations    = 2
         # 天空盒
@@ -149,19 +146,33 @@ class SSFRenderer:
             src_data_type=gl.GL_FLOAT
         )
         self.m_fluid_frac_texture_a = create_texture_2D(
-            internal_format=gl.GL_RG32F,
+            internal_format=gl.GL_RGBA32F,
             width=self.m_width,
             height=self.m_height,
-            src_format=gl.GL_RG,
+            src_format=gl.GL_RGBA,
             src_data_type=gl.GL_FLOAT
         )
         self.m_fluid_frac_texture_b = create_texture_2D(
-            internal_format=gl.GL_RG32F,
+            internal_format=gl.GL_RGBA32F,
             width=self.m_width,
             height=self.m_height,
-            src_format=gl.GL_RG,
+            src_format=gl.GL_RGBA,
             src_data_type=gl.GL_FLOAT
         )
+        # self.m_fluid_frac_texture_a = create_texture_2D(
+        #     internal_format=gl.GL_RG32F,
+        #     width=self.m_width,
+        #     height=self.m_height,
+        #     src_format=gl.GL_RG,
+        #     src_data_type=gl.GL_FLOAT
+        # )
+        # self.m_fluid_frac_texture_b = create_texture_2D(
+        #     internal_format=gl.GL_RG32F,
+        #     width=self.m_width,
+        #     height=self.m_height,
+        #     src_format=gl.GL_RG,
+        #     src_data_type=gl.GL_FLOAT
+        # )
         # 创建帧缓冲并且绑定纹理附件
         self.m_fbo = gl.glGenFramebuffers(1)
         gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, self.m_fbo)
@@ -297,13 +308,13 @@ class SSFRenderer:
         gl.glEndQuery(gl.GL_TIME_ELAPSED)
 
         '''debug'''
-        gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, self.m_fbo)
-        gl.glReadBuffer(gl.GL_COLOR_ATTACHMENT5)
-        test_w = 30
-        test_h = 30
-        test = [0 for i in range(test_w * test_h * 3)]
-        pixels = np.array(test, dtype=np.float32)
-        gl.glReadPixels(500,400,test_w, test_h, gl.GL_RGB, gl.GL_FLOAT, pixels)
+        # gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, self.m_fbo)
+        # gl.glReadBuffer(gl.GL_COLOR_ATTACHMENT5)
+        # test_w = 30
+        # test_h = 30
+        # test = [0 for i in range(test_w * test_h * 3)]
+        # pixels = np.array(test, dtype=np.float32)
+        # gl.glReadPixels(500,400,test_w, test_h, gl.GL_RGB, gl.GL_FLOAT, pixels)
 
         gl.glBeginQuery(gl.GL_TIME_ELAPSED, self.queries[5])
         self.__render(back_ground_texture)
@@ -395,7 +406,8 @@ class SSFRenderer:
         zero = [0.0]
         zero = (c_float * len(zero))(*zero)
         gl.glClearTexImage(self.m_thick_texture_a, 0, gl.GL_RED, gl.GL_FLOAT, zero) # 只在opengl 4.4版本以上使用
-        gl.glClearTexImage(self.m_fluid_frac_texture_a, 0, gl.GL_RG, gl.GL_FLOAT, zero) # 只在opengl 4.4版本以上使用
+        gl.glClearTexImage(self.m_fluid_frac_texture_a, 0, gl.GL_RGBA, gl.GL_FLOAT, zero) # 只在opengl 4.4版本以上使用
+        # gl.glClearTexImage(self.m_fluid_frac_texture_a, 0, gl.GL_RG, gl.GL_FLOAT, zero) # 只在opengl 4.4版本以上使用
 
         gl.glBindVertexArray(self.m_particle_vao)
         gl.glDrawArrays(gl.GL_POINTS, 0, self.m_particle_num)
@@ -610,7 +622,8 @@ class SSFRenderer:
         light_position = glm.vec3(5, 5, -5)
         diffuse  = glm.vec3(1.0, 0.5, 0.31)
         ambient  = glm.vec3(1.0, 0.5, 0.31)
-        specular = glm.vec3(0.5, 0.5, 0.5)
+        specular = glm.vec3(1.0, 1.0, 1.0)
+        # specular = glm.vec3(0.5, 0.5, 0.5)
         self.m_rendering_shader.set_vec3('light.positon' , light_position)
         self.m_rendering_shader.set_vec3('light.ambient' , diffuse)
         self.m_rendering_shader.set_vec3('light.diffuse' , ambient)
@@ -618,13 +631,11 @@ class SSFRenderer:
         self.m_rendering_shader.set_float("light.constant", 1.0)
         self.m_rendering_shader.set_float("light.linear", 0.09)
         self.m_rendering_shader.set_float("light.quadratic", 0.032)
-        m_diffuse  = glm.vec3(0.2, 0.2, 0.5)
-        m_ambient  = glm.vec3(0.1, 0.1, 0.8)
-        m_specular = glm.vec3(1.0, 1.0, 1.0)
-        self.m_rendering_shader.set_vec3('material.ambient' , m_diffuse)
-        self.m_rendering_shader.set_vec3('material.diffuse' , m_ambient)
+        m_ambient, m_diffuse, m_specular, m_shininess = material
+        self.m_rendering_shader.set_vec3('material.ambient' , m_ambient)
+        self.m_rendering_shader.set_vec3('material.diffuse' , m_diffuse)
         self.m_rendering_shader.set_vec3('material.specular', m_specular)
-        self.m_rendering_shader.set_float('material.shininess', 128.0)
+        self.m_rendering_shader.set_float('material.shininess', 128)
         gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, 0)
         gl.glDisable(gl.GL_DEPTH_TEST)
         gl.glDisable(gl.GL_BLEND)

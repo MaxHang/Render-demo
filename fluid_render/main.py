@@ -44,8 +44,10 @@ from fluid_render.include.static_variable import particle_radius
 # PARTICLE_PLY_DIR = 'E:\data\\r005'
 # PARTICLE_PLY_DIR = 'E:\data\\r004'
 # PARTICLE_PLY_DIR = 'E:\data\\r003'
-PARTICLE_PLY_DIR = 'E:\data\\r0035'
+# PARTICLE_PLY_DIR = 'E:\data\\r0035'
 # PARTICLE_PLY_DIR = 'E:\data\\r0025'
+
+
 
 
 camera = Camera(glm.vec3([0.0, -0.4, 1.5]))
@@ -89,18 +91,41 @@ i = 315
 
 '''多相流体管线---------------------------------------------------------------------'''
 # PARTICLE_PLY_DIR = 'E:\data\\r0035'
+# # PARTICLE_PLY_DIR = r'D:\XYH\论文实验\本科毕业设计\多相流\两相溃坝\r005'
+# PARTICLE_PLY_DIR = r'D:\XYH\论文实验\本科毕业设计\多相流\两相溃坝\r004'
+# # PARTICLE_PLY_DIR = r'D:\XYH\论文实验\本科毕业设计\多相流\两相溃坝\testr005'
+# # PARTICLE_PLY_DIR = r'D:\XYH\论文实验\本科毕业设计\多相流\不混溶两相溃坝\r005'
+# PARTICLE_PLY_DIR = r'D:\XYH\论文实验\本科毕业设计\多相流\不混溶两相溃坝\r004'
+# num_files = len([f for f in os.listdir(PARTICLE_PLY_DIR)if os.path.isfile(os.path.join(PARTICLE_PLY_DIR, f))])
 # camera = Camera(position=glm.vec3([-2.29399,    -0.171017,     -1.17689]), yaw=27.10000000000001, pitch=-18.8)
-# i = 710
-
-
-'''启元 pbd'''
-camera = Camera(glm.vec3([-20.0, 0.0, 50.0]))
-PARTICLE_PLY_DIR = r'E:\code\AI3D\AI3D\physika\out\build\x64-Debug\examples\granular_particle\ply'
-
-print(PARTICLE_PLY_DIR)
+# camera = Camera(position=glm.vec3([-1.94482,    -0.569545,      -1.3672]), yaw=33.2, pitch=-6.600000000000009)
+i = 0
+'''---------------------------------------------------------------------------------'''
+'''多相-四相混溶'''
+# PARTICLE_PLY_DIR = r'D:\XYH\论文实验\本科毕业设计\多相流\多相\四相混溶\r005'
+# PARTICLE_PLY_DIR = r'D:\XYH\论文实验\本科毕业设计\多相流\多相\四相混溶\r005-dt4'
+# PARTICLE_PLY_DIR = r'D:\XYH\论文实验\本科毕业设计\多相流\多相\四相混溶\r004-dt4'
+PARTICLE_PLY_DIR = r'D:\XYH\论文实验\本科毕业设计\多相流\多相\四相不混溶\r004-dt4'
+PARTICLE_PLY_DIR = r'D:\XYH\论文实验\本科毕业设计\多相流\多相\四相混溶\r004-dt4-v2'
 num_files = len([f for f in os.listdir(PARTICLE_PLY_DIR)if os.path.isfile(os.path.join(PARTICLE_PLY_DIR, f))])
+camera = Camera(position=glm.vec3([-2.29399,    -0.171017,     -1.17689]), yaw=27.10000000000001, pitch=-18.8)
+camera = Camera(position=glm.vec3([-1.94482,    -0.569545,      -1.3672]), yaw=33.2, pitch=-6.600000000000009)
+camera = Camera(position=glm.vec3([ 1.85301,    -0.721585,      0.66702]), yaw=-163.49999999999986, pitch=-13.000000000000032)
+camera = Camera(position=glm.vec3([ 2.80193,    -0.493102,     0.948102]), yaw=-163.49999999999986, pitch=-13.000000000000032)
+i = 0
 
 '''---------------------------------------------------------------------------------'''
+
+'''pbd'''
+# camera = Camera(glm.vec3([-20.0, 0.0, 50.0]))
+# PARTICLE_PLY_DIR = r'E:\code\AI3D\AI3D\physika\out\build\x64-Debug\examples\granular_particle\ply'
+
+# print(PARTICLE_PLY_DIR)
+# num_files = len([f for f in os.listdir(PARTICLE_PLY_DIR)if os.path.isfile(os.path.join(PARTICLE_PLY_DIR, f))])
+
+'''---------------------------------------------------------------------------------'''
+
+num_files = len([f for f in os.listdir(PARTICLE_PLY_DIR)if os.path.isfile(os.path.join(PARTICLE_PLY_DIR, f))])
 
 particle_data_time = 0
 _render_time = 0
@@ -123,24 +148,31 @@ render_num  = render_start + 89
 
 fluid_rendere = Renderer(camera)
 
-i = 1
+i = 0
 j = 0
 k = 0
-# i = 220
-# i = 315
+# i = 100
+# i = 200
+# i = 650
+i = 315
 # i = 500
 # i = 870
-# i = num_files - 1
+i = 1503
+print(i)
+flag = True
 while not fluid_rendere.exit():
-    print(i)
+    # print(i)
     k += 1
     fluid_rendere.set_frame_params()
-    file_path = os.path.join(PARTICLE_PLY_DIR, f'granular_{i}.ply')
-    # file_path = os.path.join(PARTICLE_PLY_DIR, f'fluid_{i}.ply')
+    # file_path = os.path.join(PARTICLE_PLY_DIR, f'granular_{i}.ply')
+    file_path = os.path.join(PARTICLE_PLY_DIR, f'fluid_{i}.ply')
     # file_path = os.path.join(PARTICLE_PLY_DIR, f'frame_{i}.ply')
     fluid_rendere.render(file_path)
-    if i < num_files - 1:
-        i += 1
+    # if i < num_files - 1:
+    #     i += 1
+    if flag:
+        print('粒子数量: %d'%fluid_rendere.m_particle_num)
+        flag = False
     # if k >= render_start and k < render_num:
     #     j += 1
     #     depth_time        += fluid_rendere.m_ssf_renderer.depth_time

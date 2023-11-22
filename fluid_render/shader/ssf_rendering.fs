@@ -21,7 +21,7 @@ struct Material{
 };
 
 
-uniform int shaderOption;
+uniform int   shaderOption;
 uniform float near;
 uniform float far;
 uniform float R0;
@@ -93,22 +93,26 @@ vec3 computeAttennuationMulti(float thickness)
     float fluid2_k_r = 0.2f;
     float fluid2_k_g = 0.05f;
     float fluid2_k_b = 0.5f;
-    // float fluid1_k_r = 0.05;
-    // float fluid1_k_g = 0.2;
-    // float fluid1_k_b = 0.5;
-    // float fluid2_k_r = 0.2f;
-    // float fluid2_k_g = 0.05f;
-    // float fluid2_k_b = 0.5f;
+    float fluid3_k_r = 0.05;
+    float fluid3_k_g = 0.5;
+    float fluid3_k_b = 0.2;
+    float fluid4_k_r = 0.05f;
+    float fluid4_k_g = 0.05f;
+    float fluid4_k_b = 0.5f;
     float k_r, k_g, k_b;
-    vec2  frac      = normalize(texture(fluidFracTexture, texCoord).rg);
-    float temp_frac = frac.x + frac.y;
-    frac            = vec2(frac.x / temp_frac, frac.y / temp_frac);
-    k_r = fluid1_k_r * frac.y + fluid2_k_r * frac.x;
-    k_g = fluid1_k_g * frac.y + fluid2_k_g * frac.x;
-    k_b = fluid1_k_b * frac.y + fluid2_k_b * frac.x;
-    // k_r = fluid1_k_r * frac.x + fluid2_k_r * frac.y;
-    // k_g = fluid1_k_g * frac.x + fluid2_k_g * frac.y;
-    // k_b = fluid1_k_b * frac.x + fluid2_k_b * frac.y;
+    vec4  frac      = normalize(texture(fluidFracTexture, texCoord).rgba);
+    float temp_frac = frac.x + frac.y + frac.z + frac.w;
+    frac            = frac / temp_frac;
+    k_r = fluid1_k_r * frac.x + fluid2_k_r * frac.y + fluid3_k_r * frac.z + fluid4_k_r * frac.w;
+    k_g = fluid1_k_g * frac.x + fluid2_k_g * frac.y + fluid3_k_g * frac.z + fluid4_k_g * frac.w;
+    k_b = fluid1_k_b * frac.x + fluid2_k_b * frac.y + fluid3_k_b * frac.z + fluid4_k_b * frac.w;
+    // float k_r, k_g, k_b;
+    // vec2  frac      = normalize(texture(fluidFracTexture, texCoord).rg);
+    // float temp_frac = frac.x + frac.y;
+    // frac            = vec2(frac.x / temp_frac, frac.y / temp_frac);
+    // k_r = fluid1_k_r * frac.y + fluid2_k_r * frac.x;
+    // k_g = fluid1_k_g * frac.y + fluid2_k_g * frac.x;
+    // k_b = fluid1_k_b * frac.y + fluid2_k_b * frac.x;
     return vec3(exp(-k_r * thickness), exp(-k_g * thickness), exp(-k_b * thickness));
 }
 
@@ -255,6 +259,19 @@ void rendering_BlinnPhong(){
     FragColor = vec4(material.ambient + material.diffuse * diffuse + material.specular * specular + vec3(0.0, 0.0, 0.2), 1.0);
 }
 
+
+// const vec3 milk_color = vec3(253,255,245);
+// const vec3 milk_color = vec3(0,0,0);
+const vec3 milk_color = vec3(5,89,137);
+
+vec3 mix_vec3(vec3 colorA, vec3 colorB, vec3 a){
+    vec3 result_color;
+    result_color.r = mix(colorA.r, colorB.r, a.r);
+    result_color.g = mix(colorA.g, colorB.g, a.g);
+    result_color.b = mix(colorA.b, colorB.b, a.b);
+    return result_color;
+}
+
 void rendering_Full(){
     float viewDepth = texture(depthTexture, texCoord).r;
     vec3  viewPos    = uvToEye(texCoord, viewDepth);
@@ -265,40 +282,52 @@ void rendering_Full(){
 
     vec3  lightDir = normalize(vec3(view * vec4(light.position, 1.0)) - viewPos);
     vec3  H        = normalize(lightDir + viewDir);
-    float specular = pow(max(0.0, dot(H, N)), material.shininess);
+    float diff     = dot(N, lightDir);
+    float spec     = pow(max(0.0, dot(H, N)), material.shininess);
 
-    float fresnelRatio      = cal_fresnel_R(R0, dot(viewDir, N));
+    vec3 specular  = light.specular * (spec * material.specular);
+    vec3 diffuse   = light.diffuse * (diff * material.diffuse);
+
+    float fresnelRatio      = clamp(cal_fresnel_R(R0, dot(viewDir, N)), 0, 1);
     vec3  colorAttennuation = computeAttennuation(thickness * 2.0);
     vec3  reflectionDir     = reflect(-viewDir, N);
     vec3  worldR            = transpose(inverse(mat3(invView))) * reflectionDir;
     vec3  reflectionColor   = texture(skyboxTexture, worldR).rgb;
     vec3  refractionDir     = refract(-viewDir, N, 1.0 / refractiveIndex);
     vec3  refractionColor   = colorAttennuation * vec3(texture(backGroundTexture, texCoord + refractionDir.xy * 0.2));
+    // vec3  refractionColor   = mix_vec3(milk_color, vec3(texture(backGroundTexture, texCoord + refractionDir.xy * 0.2)), colorAttennuation);
 
-    FragColor = vec4(mix(refractionColor, reflectionColor, fresnelRatio) + material.specular * specular, 1.0);
+    FragColor = vec4(mix(refractionColor, reflectionColor, fresnelRatio) + spec, 1.0);
 }
 
 void rendering_Multi_Fluid(){
     float viewDepth = texture(depthTexture, texCoord).r;
-    vec3  viewPos    = uvToEye(texCoord, viewDepth);
-    vec3  viewDir    = normalize(-viewPos);
-
-    vec3  N          = texture(normalTexture, texCoord).xyz;
+    vec3  viewPos   = uvToEye(texCoord, viewDepth);
+    vec3  viewDir   = normalize(-viewPos);
+    
+    vec3  N         = texture(normalTexture, texCoord).xyz;
     float thickness = texture(thickTexture, texCoord).r;
 
     vec3  lightDir = normalize(vec3(view * vec4(light.position, 1.0)) - viewPos);
     vec3  H        = normalize(lightDir + viewDir);
-    float specular = pow(max(0.0, dot(H, N)), material.shininess);
+    float diff     = dot(N, lightDir);
+    float spec     = pow(max(0.0, dot(H, N)), material.shininess);
+
+    vec3 ambient   = light.ambient * material.ambient;
+    // vec3 specular  = light.specular * (spec * (material.specular));
+    vec3 specular  = light.specular * (spec * vec3(1.0));
+    vec3 diffuse   = light.diffuse * (diff * material.diffuse);
 
     float fresnelRatio      = cal_fresnel_R(R0, dot(viewDir, N));
-    vec3  colorAttennuation = computeAttennuationMulti(thickness * 2.0);
+    vec3  colorAttennuation = computeAttennuationMulti(thickness * 5.0);
     vec3  reflectionDir     = reflect(-viewDir, N);
     vec3  worldR            = transpose(inverse(mat3(invView))) * reflectionDir;
     vec3  reflectionColor   = texture(skyboxTexture, worldR).rgb;
     vec3  refractionDir     = refract(-viewDir, N, 1.0 / refractiveIndex);
     vec3  refractionColor   = colorAttennuation * vec3(texture(backGroundTexture, texCoord + refractionDir.xy * 0.2));
 
-    FragColor = vec4(mix(refractionColor, reflectionColor, fresnelRatio) + material.specular * specular, 1.0);
+    FragColor = vec4(mix(refractionColor, reflectionColor, fresnelRatio) + specular, 1.0);
+    // FragColor = vec4(ambient + spec + diffuse, 1.0);
 }
 
 void rendering_mutil_refract(){
@@ -362,11 +391,11 @@ void rendering_Full_without_thick(){
     float specular = pow(max(0.0, dot(H, N)), material.shininess);
 
     float fresnelRatio    = cal_fresnel_R(R0, dot(viewDir, N));
-    vec3 reflectionDir   = reflect(-viewDir, N);
-    vec3 worldR           = transpose(inverse(mat3(invView))) * reflectionDir;
-    vec3 reflectionColor  = texture(skyboxTexture, worldR).rgb;
-    vec3 refractionDir   = refract(-viewDir, N, 1.0 / refractiveIndex);
-    vec3 refractionColor = vec3(texture(backGroundTexture, texCoord + refractionDir.xy * 0.2));
+    vec3  reflectionDir   = reflect(-viewDir, N);
+    vec3  worldR          = transpose(inverse(mat3(invView))) * reflectionDir;
+    vec3  reflectionColor = texture(skyboxTexture, worldR).rgb;
+    vec3  refractionDir   = refract(-viewDir, N, 1.0 / refractiveIndex);
+    vec3  refractionColor = vec3(texture(backGroundTexture, texCoord + refractionDir.xy * 0.2));
 
     FragColor = vec4(mix(refractionColor, reflectionColor, fresnelRatio) + material.specular * specular, 1.0);
 }
@@ -417,6 +446,13 @@ void main(){
         rendering_mutil_refract();
     else
         rendering_Full();
+
+    // FragColor.rgb = FragColor.rgb / (FragColor.rgb + vec3(1.0));
+    // FragColor.rgb = vec3(1.0) - exp(-FragColor.rgb * 1.0);
+
+    // gamma correction.
+	// const float gamma = 2.2f;
+	// FragColor.rgb     = pow(FragColor.rgb, vec3(1.0f/gamma));
 }
 
 // void main(){

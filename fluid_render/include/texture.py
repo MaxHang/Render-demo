@@ -9,10 +9,15 @@ FLOOR_DIR = RESOURCES.joinpath('floor')
 SKYBOX_DIR   = RESOURCES.joinpath('skybox')
 # SKYBOX_DIR   = RESOURCES.joinpath('Sky', 'sky01')
 # SKYBOX_DIR   = RESOURCES.joinpath('Sky', 'sky02')
+# SKYBOX_DIR   = RESOURCES.joinpath('Sky', 'sky03')
 # SKYBOX_DIR   = RESOURCES.joinpath('Sky', 'sky04')
-SKYBOX_DIR   = RESOURCES.joinpath('Sky', 'sky05')
+# SKYBOX_DIR   = RESOURCES.joinpath('Sky', 'sky05')
+# SKYBOX_DIR   = RESOURCES.joinpath('Sky', 'sky06')
 # SKYBOX_DIR   = RESOURCES.joinpath('Sky', 'sky07')
-# SKYBOX_DIR   = RESOURCES.joinpath('Sky', 'sky07')
+# SKYBOX_DIR   = RESOURCES.joinpath('Sky', 'sky08')
+SKYBOX_DIR   = RESOURCES.joinpath('Sky', 'sky09')
+SKYBOX_DIR   = RESOURCES.joinpath('Sky', 'sky11')
+# SKYBOX_DIR   = RESOURCES.joinpath('Sky', 'sky12')
 
 
 def load_texture_2D(path,

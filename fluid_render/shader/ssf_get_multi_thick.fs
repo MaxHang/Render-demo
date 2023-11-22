@@ -1,12 +1,14 @@
 #version 330 core
 
-in vec2 fluidFrac;
+in vec4 fluidFrac;
+// in vec2 fluidFrac;
 in vec3 viewSpacePos;
 
 uniform float particleRadius;
 
 layout (location = 0) out float thickness;
-layout (location = 1) out vec2  outFluidFrac;
+layout (location = 1) out vec4  outFluidFrac;
+// layout (location = 1) out vec2  outFluidFrac;
 
 void main(){
     vec3 normal;
