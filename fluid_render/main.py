@@ -34,25 +34,29 @@ from fluid_render.include.static_variable import particle_radius
 # PARTICLE_PLY_DIR = 'D:\c-disk-data\Desktop\毕业设计\Graduation-Experment\不混溶多相流\\r0035'
 # PARTICLE_PLY_DIR = 'D:\c-disk-data\Desktop\毕业设计\Graduation-Experment\不混溶多相流\\r0025'
 
-# PARTICLE_PLY_DIR = 'D:\c-disk-data\Desktop\毕业设计\Graduation-Experment\不混溶多相流\\r004可视化'
+PARTICLE_PLY_DIR = 'D:\c-disk-data\Desktop\毕业设计\Graduation-Experment\不混溶多相流\\r004可视化'
 '''混溶多相流体'''
-# PARTICLE_PLY_DIR = 'E:\data\\r010'
-# PARTICLE_PLY_DIR = 'E:\data\\r009'
-# PARTICLE_PLY_DIR = 'E:\data\\r008'
-# PARTICLE_PLY_DIR = 'E:\data\\r007'
-# PARTICLE_PLY_DIR = 'E:\data\\r006'
-# PARTICLE_PLY_DIR = 'E:\data\\r005'
-# PARTICLE_PLY_DIR = 'E:\data\\r004'
-# PARTICLE_PLY_DIR = 'E:\data\\r003'
-# PARTICLE_PLY_DIR = 'E:\data\\r0035'
-# PARTICLE_PLY_DIR = 'E:\data\\r0025'
+
+# PARTICLE_PLY_DIR = r'F:\本科毕业设计\实验\多相流仿真数据\data\r010'
+# PARTICLE_PLY_DIR = r'F:\本科毕业设计\实验\多相流仿真数据\data\r009'
+# PARTICLE_PLY_DIR = r'F:\本科毕业设计\实验\多相流仿真数据\data\r008'
+# PARTICLE_PLY_DIR = r'F:\本科毕业设计\实验\多相流仿真数据\data\r007'
+# PARTICLE_PLY_DIR = r'F:\本科毕业设计\实验\多相流仿真数据\data\r006'
+PARTICLE_PLY_DIR = r'F:\本科毕业设计\实验\多相流仿真数据\data\r005'
+# PARTICLE_PLY_DIR = r'F:\本科毕业设计\实验\多相流仿真数据\data\r004'
+# PARTICLE_PLY_DIR = r'F:\本科毕业设计\实验\多相流仿真数据\data\r003'
+# PARTICLE_PLY_DIR = r'F:\本科毕业设计\实验\多相流仿真数据\data\r0035'
+camera = Camera(position=glm.vec3([ 3.19455,    -0.062028,      1.96609]), yaw=-148.6, pitch=-9.700000000000044)
 
 
 
 
-camera = Camera(glm.vec3([0.0, -0.4, 1.5]))
-camera = Camera(glm.vec3([0.0, -0.4, 2.5]))
-camera = Camera(glm.vec3([0.0, -0.75, 3.35]))
+
+
+
+# camera = Camera(glm.vec3([0.0, -0.4, 1.5]))
+# camera = Camera(glm.vec3([0.0, -0.4, 2.5]))
+# camera = Camera(glm.vec3([0.0, -0.75, 3.35]))
 # camera = Camera(glm.vec3([0.0, -0.75, 4.0]))
 # camera = Camera(glm.vec3([0.0, -0.4, 4.0]))
 # camera = Camera(position=glm.vec3([3.58238,     -1.33157,   -0.0816039]), yaw=-180.79999999999987, pitch=-3.000000000000007)
@@ -105,13 +109,26 @@ i = 0
 # PARTICLE_PLY_DIR = r'D:\XYH\论文实验\本科毕业设计\多相流\多相\四相混溶\r005'
 # PARTICLE_PLY_DIR = r'D:\XYH\论文实验\本科毕业设计\多相流\多相\四相混溶\r005-dt4'
 # PARTICLE_PLY_DIR = r'D:\XYH\论文实验\本科毕业设计\多相流\多相\四相混溶\r004-dt4'
-PARTICLE_PLY_DIR = r'D:\XYH\论文实验\本科毕业设计\多相流\多相\四相不混溶\r004-dt4'
-PARTICLE_PLY_DIR = r'D:\XYH\论文实验\本科毕业设计\多相流\多相\四相混溶\r004-dt4-v2'
-num_files = len([f for f in os.listdir(PARTICLE_PLY_DIR)if os.path.isfile(os.path.join(PARTICLE_PLY_DIR, f))])
-camera = Camera(position=glm.vec3([-2.29399,    -0.171017,     -1.17689]), yaw=27.10000000000001, pitch=-18.8)
-camera = Camera(position=glm.vec3([-1.94482,    -0.569545,      -1.3672]), yaw=33.2, pitch=-6.600000000000009)
-camera = Camera(position=glm.vec3([ 1.85301,    -0.721585,      0.66702]), yaw=-163.49999999999986, pitch=-13.000000000000032)
+# PARTICLE_PLY_DIR = r'D:\XYH\论文实验\本科毕业设计\多相流\多相\四相不混溶\r004-dt4'
+# PARTICLE_PLY_DIR = r'D:\XYH\论文实验\本科毕业设计\多相流\多相\四相混溶\r004-dt4-v2'
+PARTICLE_PLY_DIR = r'D:\XYH\论文实验\本科毕业设计\多相流\多相-yr\四相不混溶-500-3000-1000-5000\r004'
+PARTICLE_PLY_DIR = r'D:\XYH\论文实验\本科毕业设计\多相流\多相-yr\四相不混溶-500-3000-1000-5000\r004-0.5X0.5'
+PARTICLE_PLY_DIR = r'D:\XYH\论文实验\本科毕业设计\多相流\多相-yr\四相混溶-500-3000-1000-5000\r004-0.5X0.5'
+# PARTICLE_PLY_DIR = r'D:\XYH\论文实验\本科毕业设计\多相流\多相-yr\三相不混溶-1000-3000-5000\r004-0.5X0.5'
+PARTICLE_PLY_DIR = r'D:\XYH\论文实验\本科毕业设计\多相流\多相-yr\三相混溶-1000-3000-5000\r004-0.5X0.5'
+'''小水块掉落大水块'''
+PARTICLE_PLY_DIR = r'D:\XYH\论文实验\本科毕业设计\多相流\两相\不混溶\小水块掉落大水块\r004-dt4'
+# PARTICLE_PLY_DIR = r'D:\XYH\论文实验\本科毕业设计\多相流\两相\混溶\小水块掉落大水块\r004-dt4'
+# num_files = len([f for f in os.listdir(PARTICLE_PLY_DIR)if os.path.isfile(os.path.join(PARTICLE_PLY_DIR, f))])
+# camera = Camera(position=glm.vec3([-2.29399,    -0.171017,     -1.17689]), yaw=27.10000000000001, pitch=-18.8)
+# camera = Camera(position=glm.vec3([-1.94482,    -0.569545,      -1.3672]), yaw=33.2, pitch=-6.600000000000009)
+# camera = Camera(position=glm.vec3([ 1.85301,    -0.721585,      0.66702]), yaw=-163.49999999999986, pitch=-13.000000000000032)
 camera = Camera(position=glm.vec3([ 2.80193,    -0.493102,     0.948102]), yaw=-163.49999999999986, pitch=-13.000000000000032)
+
+'''渲染管线'''
+# camera = Camera(position=glm.vec3([ 2.6341,    -0.146576,      1.32078]), yaw=-153.30000000000027, pitch=-6.900000000000063)
+# camera = Camera(position=glm.vec3([ 1.75457,    -0.340536,     0.906647]), yaw=-152.3000000000003, pitch=-18.600000000000044)
+# camera = Camera(position=glm.vec3([ 1.70784,    -0.340536,      1.02574]), yaw=-146.4000000000002, pitch=-17.60000000000003)
 i = 0
 
 '''---------------------------------------------------------------------------------'''
@@ -141,25 +158,45 @@ render_time = 0
 glfw_frame_time  = 0
 ssf_time    = 0
 # render_start  = 50
-render_start  = 10
+render_start  = 0
 # render_start  = 100
 # render_start  = 150
-render_num  = render_start + 89
+# render_num  = render_start + 89
+render_num  = num_files - 1
 
 fluid_rendere = Renderer(camera)
 
-i = 0
+i = 1
 j = 0
 k = 0
 # i = 100
-# i = 200
+# i = 198
 # i = 650
-i = 315
+# i = 315
 # i = 500
 # i = 870
-i = 1503
+# i = 1503
 print(i)
 flag = True
+save_img_dir = r'D:\XYH\论文实验\本科毕业设计\保存图片\四相溃坝\混溶\r004-dt4-v2'
+save_img_dir = r'D:\XYH\论文实验\本科毕业设计\保存图片\四相溃坝\不混溶\r004-dt4'
+save_img_dir = r'D:\XYH\论文实验\本科毕业设计\保存图片\两相\混溶\r003'
+save_img_dir = r'D:\XYH\论文实验\本科毕业设计\保存图片\两相\小水块掉落大水块\不混溶\r004-dt4'
+save_img_dir = r'D:\XYH\论文实验\本科毕业设计\保存图片\两相\小水块掉落大水块\混溶\r004-dt4'
+save_img_dir = r'D:\XYH\论文实验\本科毕业设计\保存图片\渲染管线\四相混溶'
+save_img_dir = r'D:\XYH\论文实验\本科毕业设计\保存图片\易用性实验'
+save_img_dir = r'D:\XYH\论文实验\本科毕业设计\保存图片\四相溃坝\不混溶-yr\r004'
+save_img_dir = r'D:\XYH\论文实验\本科毕业设计\保存图片\四相溃坝\不混溶-yr\r004-0.5X0.5'
+save_img_dir = r'D:\XYH\论文实验\本科毕业设计\保存图片\四相溃坝\混溶-yr\r004-0.5X0.5'
+save_img_dir = r'D:\XYH\论文实验\本科毕业设计\保存图片\三相溃坝\不混溶-yr\r004-0.5X0.5'
+# save_img_dir = r'D:\XYH\论文实验\本科毕业设计\保存图片\三相溃坝\混溶-yr\r004-0.5X0.5'
+# save_img_dir = r'D:\XYH\论文实验\本科毕业设计\保存图片\debug'
+save_img_dir = r'D:\XYH\论文实验\本科毕业设计\保存图片\两相\小水块掉落大水块\不混溶\trick图片-thickX8'
+# save_img_dir = r'D:\XYH\论文实验\本科毕业设计\保存图片\两相\小水块掉落大水块\不混溶\trick图片-thickX9'
+save_flag = True
+save_index = [100, 200, 300, 400]
+if not os.path.exists(save_img_dir):
+    os.makedirs(save_img_dir)
 while not fluid_rendere.exit():
     # print(i)
     k += 1
@@ -168,23 +205,36 @@ while not fluid_rendere.exit():
     file_path = os.path.join(PARTICLE_PLY_DIR, f'fluid_{i}.ply')
     # file_path = os.path.join(PARTICLE_PLY_DIR, f'frame_{i}.ply')
     fluid_rendere.render(file_path)
-    # if i < num_files - 1:
-    #     i += 1
+    # if i < 201:
+    if i < num_files - 1:
+    # if i < 3:
+        '''取某一帧制作渲染管线'''
+        # if save_flag and i == 2:
+        #     fluid_rendere.save_frame_img(save_img_dir, i)
+        #     save_flag = False
+        '''保存渲染图片'''
+        # if save_flag:
+        #     fluid_rendere.save_frame_img(save_img_dir, i)
+        '''保存特定索引渲染图片'''
+        if save_flag and i in save_index:
+            fluid_rendere.save_frame_img(save_img_dir, i)
+        i += 1
+        
     if flag:
         print('粒子数量: %d'%fluid_rendere.m_particle_num)
         flag = False
-    # if k >= render_start and k < render_num:
-    #     j += 1
-    #     depth_time        += fluid_rendere.m_ssf_renderer.depth_time
-    #     thick_time        += fluid_rendere.m_ssf_renderer.thick_time
-    #     smooth_depth_time += fluid_rendere.m_ssf_renderer.smooth_depth_time
-    #     smooth_thick_time += fluid_rendere.m_ssf_renderer.smooth_thick_time
-    #     normal_time       += fluid_rendere.m_ssf_renderer.normal_time
-    #     shader_time       += fluid_rendere.m_ssf_renderer.shader_time
-    #     render_time       += fluid_rendere.render_time
-    #     read_time         += fluid_rendere.read_time
-    #     glfw_frame_time   += fluid_rendere.delta_time
-    #     ssf_time          += fluid_rendere.ssf_time
+    if k >= render_start and k < render_num:
+        j += 1
+        depth_time        += fluid_rendere.m_ssf_renderer.depth_time
+        thick_time        += fluid_rendere.m_ssf_renderer.thick_time
+        smooth_depth_time += fluid_rendere.m_ssf_renderer.smooth_depth_time
+        smooth_thick_time += fluid_rendere.m_ssf_renderer.smooth_thick_time
+        normal_time       += fluid_rendere.m_ssf_renderer.normal_time
+        shader_time       += fluid_rendere.m_ssf_renderer.shader_time
+        render_time       += fluid_rendere.render_time
+        read_time         += fluid_rendere.read_time
+        glfw_frame_time   += fluid_rendere.delta_time
+        ssf_time          += fluid_rendere.ssf_time
 
         # _render_time     += fluid_rendere._render_time
         # particle_data_time += fluid_rendere.particle_data_time

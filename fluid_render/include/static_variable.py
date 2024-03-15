@@ -131,7 +131,7 @@ quad_vertices = np.array(
 particle_radius = 0.1
 # particle_radius = 0.09
 # particle_radius = 0.08
-# particle_radius = 0.07
+particle_radius = 0.07
 particle_radius = 0.06
 # particle_radius = 0.05
 # particle_radius = 0.04
@@ -165,6 +165,7 @@ As the range parameter sigma_r increases, the bilateral filter gradually approac
 As the spatial parameter sigma_d increases, the larger features get smoothened.
 """
 max_filter_size = 100
+max_filter_size = 150
 # max_filter_size = 50
 # 双边过滤
 sigma_r = 0.15
@@ -197,3 +198,8 @@ pearl_material = glm.vec3(0.25, 0.20725, 0.20725), glm.vec3(1.0, 0.829, 0.829), 
 
 
 material = emerald_material
+
+use_set_activate_flag = False
+# set_activate_values = glm.vec4(0.25,0.25,0.25,0.25)
+set_activate_values = glm.vec4(1.0, 1.0, 1.0, 1.0)
+set_activate_values = set_activate_values / 4.0

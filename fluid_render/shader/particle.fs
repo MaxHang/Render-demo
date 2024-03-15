@@ -65,8 +65,8 @@ void main()
     // FragColor.rgb = ambient + diffuse;
 
     // gamma correction.
-	const float gamma = 2.2f;
-	FragColor.rgb     = pow(FragColor.rgb, vec3(1.0f/gamma));
+	// const float gamma = 2.2f;
+	// FragColor.rgb     = pow(FragColor.rgb, vec3(1.0f/gamma));
 
     // // 法线可视化
     // normal = normalize(normal);

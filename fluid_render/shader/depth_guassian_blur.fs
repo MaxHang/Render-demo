@@ -42,8 +42,8 @@ void main(){
 
         sample_depth.x = texture(depthTexture, sample_tex.xy).r;
         sample_depth.y = texture(depthTexture, sample_tex.zw).r;
-        // w2             = vec2(compute_weight1D(dist, two_sigma2));
-        w2             = vec2(compute_weight1D(x, two_sigma2));
+        w2             = vec2(compute_weight1D(dist, two_sigma2));
+        // w2             = vec2(compute_weight1D(x, two_sigma2));
         // w2             = vec2(1);
 
         sum2  += sample_depth * w2;

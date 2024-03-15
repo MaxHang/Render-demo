@@ -26,6 +26,7 @@ uniform float near;
 uniform float far;
 uniform float R0;
 uniform float refractiveIndex;
+uniform float particleRadius;
 uniform vec3  cameraPosition;
 uniform mat4  view;
 uniform mat4  invView;
@@ -86,19 +87,124 @@ vec3 computeAttennuation(float thickness)
 
 vec3 computeAttennuationMulti(float thickness)
 {
-    // thickness *= 2;
-    float fluid1_k_r = 0.5f;
-    float fluid1_k_g = 0.2f;
-    float fluid1_k_b = 0.05f;
-    float fluid2_k_r = 0.2f;
-    float fluid2_k_g = 0.05f;
-    float fluid2_k_b = 0.5f;
-    float fluid3_k_r = 0.05;
-    float fluid3_k_g = 0.5;
-    float fluid3_k_b = 0.2;
+    // 测试
+    // float fluid1_k_r = 0.5f;
+    // float fluid1_k_g = 0.2f;
+    // float fluid1_k_b = 0.05f;
+
+    // float fluid2_k_r = 0.5f;
+    // float fluid2_k_g = 0.2f;
+    // float fluid2_k_b = 0.05f;
+    
+    // float fluid3_k_r = 0.5f;
+    // float fluid3_k_g = 0.2f;
+    // float fluid3_k_b = 0.05f;
+
+    // float fluid4_k_r = 0.5f;
+    // float fluid4_k_g = 0.2f;
+    // float fluid4_k_b = 0.05f;
+
+    // 多相-三相溃坝
+    // float fluid1_k_r = 0.10f;
+    // float fluid1_k_g = 0.10f;
+    // float fluid1_k_b = 0.05f;
+
+    // float fluid2_k_r = 0.2f;
+    // float fluid2_k_g = 0.3f;
+    // float fluid2_k_b = 0.05f;
+    
+    // float fluid3_k_r = 0.6;
+    // float fluid3_k_g = 0.4;
+    // float fluid3_k_b = 0.05;
+
+    // float fluid4_k_r = 0.05f;
+    // float fluid4_k_g = 0.05f;
+    // float fluid4_k_b = 0.5f;
+
+    // 多相-三相溃坝-最后三相实验采用
+    // float fluid1_k_r = 0.6;
+    // float fluid1_k_g = 0.4;
+    // float fluid1_k_b = 0.05;
+
+    // float fluid2_k_r = 0.2f;
+    // float fluid2_k_g = 0.3f;
+    // float fluid2_k_b = 0.05f;
+    
+    // float fluid3_k_r = 0.10f;
+    // float fluid3_k_g = 0.10f;
+    // float fluid3_k_b = 0.05f;
+
+    // float fluid4_k_r = 0.05f;
+    // float fluid4_k_g = 0.05f;
+    // float fluid4_k_b = 0.5f;
+
+    // 多相-四相混溶
+    // float fluid1_k_r = 0.5f;
+    // float fluid1_k_g = 0.2f;
+    // float fluid1_k_b = 0.05f;
+
+    // float fluid2_k_r = 0.2f;
+    // float fluid2_k_g = 0.05f;
+    // float fluid2_k_b = 0.5f;
+    
+    // float fluid3_k_r = 0.05;
+    // float fluid3_k_g = 0.5;
+    // float fluid3_k_b = 0.2;
+
+    // float fluid4_k_r = 0.05f;
+    // float fluid4_k_g = 0.05f;
+    // float fluid4_k_b = 0.5f;
+
+    //四相混溶-不混溶-yr  
+    // float fluid1_k_r = 0.2f;
+    // float fluid1_k_g = 0.05f;
+    // float fluid1_k_b = 0.5f;
+
+    // float fluid2_k_r = 0.05;
+    // float fluid2_k_g = 0.5;
+    // float fluid2_k_b = 0.2;
+
+    // float fluid3_k_r = 0.5f;
+    // float fluid3_k_g = 0.2f;
+    // float fluid3_k_b = 0.05f;
+    
+    // float fluid4_k_r = 0.05f;
+    // float fluid4_k_g = 0.05f;
+    // float fluid4_k_b = 0.5f;
+
+    // 小水块掉落大水块
+    float fluid1_k_r = 0.125f;
+    float fluid1_k_g = 0.05f;
+    float fluid1_k_b = 0.5f;
+
+    fluid1_k_r = 0.08f;
+    fluid1_k_g = 0.05f;
+    fluid1_k_b = 0.08f;
+
+    fluid1_k_r = 0.08f;
+    fluid1_k_g = 0.05f;
+    fluid1_k_b = 0.10f;
+
+    fluid1_k_r = 0.05f;
+    fluid1_k_g = 0.03f;
+    fluid1_k_b = 0.07f;
+
+    fluid1_k_r = 0.05f;
+    fluid1_k_g = 0.02f;
+    fluid1_k_b = 0.07f;
+
+    float fluid2_k_r = 0.05f;
+    float fluid2_k_g = 0.275f;
+    float fluid2_k_b = 0.35;
+
+    float fluid3_k_r = 0.5f;
+    float fluid3_k_g = 0.2f;
+    float fluid3_k_b = 0.05f;
+    
     float fluid4_k_r = 0.05f;
     float fluid4_k_g = 0.05f;
     float fluid4_k_b = 0.5f;
+
     float k_r, k_g, k_b;
     vec4  frac      = normalize(texture(fluidFracTexture, texCoord).rgba);
     float temp_frac = frac.x + frac.y + frac.z + frac.w;
@@ -256,7 +362,9 @@ void rendering_BlinnPhong(){
     // float specular = 0;
     float diffuse  = max(0.0, dot(lightDir, N)) * 1.0;
 
-    FragColor = vec4(material.ambient + material.diffuse * diffuse + material.specular * specular + vec3(0.0, 0.0, 0.2), 1.0);
+    FragColor = vec4(vec3(0.0, 0.0, 0.2) + light.specular * specular, 1.0);
+    // FragColor = vec4(material.specular * specular + vec3(0.0, 0.7, 0.3), 1.0);
+    // FragColor = vec4(material.ambient + material.diffuse * diffuse + material.specular * specular + vec3(0.0, 0.0, 0.2), 1.0);
 }
 
 
@@ -319,7 +427,18 @@ void rendering_Multi_Fluid(){
     vec3 diffuse   = light.diffuse * (diff * material.diffuse);
 
     float fresnelRatio      = cal_fresnel_R(R0, dot(viewDir, N));
-    vec3  colorAttennuation = computeAttennuationMulti(thickness * 5.0);
+    
+    if (thickness < particleRadius * 10.0)
+    {
+        float diff = particleRadius * 10.0 - thickness;
+        float factor = 1 / (1 + exp(-diff));
+        thickness += factor * diff;
+    }
+    // vec3  colorAttennuation = computeAttennuationMulti(thickness * 3.0);
+    // vec3  colorAttennuation = computeAttennuationMulti(thickness * 7.0);
+    // vec3  colorAttennuation = computeAttennuationMulti(thickness * 9.0);
+    vec3  colorAttennuation = computeAttennuationMulti(thickness * 8.0);
+    // vec3  colorAttennuation = computeAttennuationMulti(thickness * 5.0);
     vec3  reflectionDir     = reflect(-viewDir, N);
     vec3  worldR            = transpose(inverse(mat3(invView))) * reflectionDir;
     vec3  reflectionColor   = texture(skyboxTexture, worldR).rgb;
@@ -348,8 +467,8 @@ void rendering_mutil_refract(){
 }
 
 void rendering_Multi_Frac(){
-    vec2  frac = normalize(texture(fluidFracTexture, texCoord).rg);
-    FragColor = vec4(0.0, frac.x, frac.y, 1.0);
+    vec4  frac = normalize(texture(fluidFracTexture, texCoord).bgra);
+    FragColor = frac;
 }
 
 void rendering_Multi_Fluid_2(){
@@ -402,24 +521,24 @@ void rendering_Full_without_thick(){
 
 void rendering_Attenuation(){
     float thickness = texture(thickTexture, texCoord).r;
-    vec3  colorAttennuation = computeAttennuation(thickness);
+    vec3  colorAttennuation = computeAttennuation(thickness * 7.0);
 
     FragColor = vec4(colorAttennuation, 1.0);
 }
 
 void rendering_Multi_Attenuation(){
     float thickness = texture(thickTexture, texCoord).r;
-    vec3  colorAttennuation = computeAttennuationMulti(thickness * 2.0);
+    vec3  colorAttennuation = computeAttennuationMulti(thickness * 7.0);
 
     FragColor = vec4(colorAttennuation, 1.0);
 }
 
 void main(){
-    // float depth = texture(depthTexture, texCoord).r;
-    // if (-depth > far - 0.1){
-    //     FragColor = texture(backGroundTexture, texCoord);
-    //     return;
-    // }
+    float depth = texture(depthTexture, texCoord).r;
+    if (-depth > far - 0.1){
+        FragColor = texture(backGroundTexture, texCoord);
+        return;
+    }
     if(shaderOption == 1)
             rendering_depth();
     else if (shaderOption == 2)

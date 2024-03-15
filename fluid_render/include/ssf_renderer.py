@@ -1,5 +1,6 @@
 from ctypes import c_float, c_int, c_uint32, c_void_p, sizeof
 
+import numpy as np
 import glm
 import OpenGL.GL as gl
 
@@ -30,7 +31,7 @@ class SSFRenderer:
         # self.m_shader_option = ShaderOption.Depth
         self.m_shader_option = ShaderOption.MultiFluid
         # 模糊选择 
-        self.m_smooth_option = SmoothOption.BilateralGaussian
+        self.m_smooth_option = SmoothOption.NarrowRange
         # 平滑次数
         self.m_iterations    = 2
         # 天空盒
@@ -308,13 +309,13 @@ class SSFRenderer:
         gl.glEndQuery(gl.GL_TIME_ELAPSED)
 
         '''debug'''
-        # gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, self.m_fbo)
-        # gl.glReadBuffer(gl.GL_COLOR_ATTACHMENT5)
-        # test_w = 30
-        # test_h = 30
-        # test = [0 for i in range(test_w * test_h * 3)]
-        # pixels = np.array(test, dtype=np.float32)
-        # gl.glReadPixels(500,400,test_w, test_h, gl.GL_RGB, gl.GL_FLOAT, pixels)
+        gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, self.m_fbo)
+        gl.glReadBuffer(gl.GL_COLOR_ATTACHMENT5)
+        test_w = 30
+        test_h = 20
+        test = [0 for i in range(test_w * test_h * 4)]
+        pixels = np.array(test, dtype=np.float32)
+        gl.glReadPixels(600,600,test_w, test_h, gl.GL_RGBA, gl.GL_FLOAT, pixels)
 
         gl.glBeginQuery(gl.GL_TIME_ELAPSED, self.queries[5])
         self.__render(back_ground_texture)
@@ -569,7 +570,7 @@ class SSFRenderer:
         render_buffers = (c_uint32 * len(render_buffers))(*render_buffers)
         gl.glDrawBuffers(1, render_buffers)
         gl.glEnable(gl.GL_DEPTH_TEST)
-        gl.glDepthFunc(gl.GL_ALWAYS);
+        gl.glDepthFunc(gl.GL_ALWAYS)
         gl.glDisable(gl.GL_BLEND)
         black = (0.0, 0.0, 0.0)
         black = (c_float * len(black))(*black)
@@ -605,6 +606,7 @@ class SSFRenderer:
         self.m_rendering_shader.set_float('far', far)
         self.m_rendering_shader.set_float('R0', R0_air_to_water)
         self.m_rendering_shader.set_float('refractiveIndex', refractive_index)
+        self.m_rendering_shader.set_float('particleRadius', particle_radius)
         self.m_rendering_shader.set_vec3('cameraPosition', self.m_camera.get_pos())
         self.m_rendering_shader.set_mat4('model', self.m_model)
         self.m_rendering_shader.set_mat4('view', self.m_view)

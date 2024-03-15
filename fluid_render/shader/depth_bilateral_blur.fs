@@ -85,8 +85,8 @@ float filter1D(float pixelDepth)
         rDepth = sampleDepth - vec2(pixelDepth);
 
         // 对于正负方向来说, 其是关于过滤元素对称的, 故其权重是一样的
-        // w2_r       = vec2(compute_weight1D(x, two_sigma2));
-        w2_r       = vec2(compute_weight1D(r, two_sigma2));
+        w2_r       = vec2(compute_weight1D(x, two_sigma2));
+        // w2_r       = vec2(compute_weight1D(r, two_sigma2));
         w2_depth.x = compute_weight1D(rDepth.x, two_sigmaDepth2);
         w2_depth.y = compute_weight1D(rDepth.y, two_sigmaDepth2);
 
@@ -146,8 +146,8 @@ float filter2D(float pixelDepth)
             sampleDepth.w = texture(depthTexture, f_tex2.zw).r;
 
             rDepth     = sampleDepth - vec4(pixelDepth);
-            // w4_r       = vec4(compute_weight2D(vec2(x, y), two_sigma2));
-            w4_r       = vec4(compute_weight2D(r, two_sigma2));
+            w4_r       = vec4(compute_weight2D(vec2(x, y), two_sigma2));
+            // w4_r       = vec4(compute_weight2D(r, two_sigma2));
             // w4_r       = vec4(compute_weight2D(blurRadius * r, two_sigma2));
             w4_depth.x = compute_weight1D(rDepth.x, two_sigmaDepth2);
             w4_depth.y = compute_weight1D(rDepth.y, two_sigmaDepth2);

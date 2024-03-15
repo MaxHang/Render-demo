@@ -1,4 +1,5 @@
 import math
+import os
 import platform
 from ctypes import c_float, c_int, c_void_p, sizeof
 
@@ -6,6 +7,7 @@ import glfw
 import glm
 import numpy as np
 import OpenGL.GL as gl
+import PIL.Image as Image
 import time
 from plyfile import PlyData, PlyElement
 
@@ -17,8 +19,14 @@ from fluid_render.include.ssf_renderer import SSFRenderer
 from fluid_render.include.static_variable import far, near, particle_radius, skybox_faces, skybox_vertices, lamp_vertices, ground_vertices
 from fluid_render.include.texture import load_cubemap, load_texture_2D, create_texture_2D
 
+'''渲染管线'''
+WINDOW_WIDTH  = 600
+WINDOW_HEIGHT = 480
+
 WINDOW_WIDTH  = 1000
 WINDOW_HEIGHT = 800
+
+
 # WINDOW_WIDTH  = 840
 # WINDOW_HEIGHT = 720
 # WINDOW_WIDTH  = 1200
@@ -137,6 +145,8 @@ class Renderer:
         self.render_time = None
         self.read_time  = None
         self.ssf_time   = None
+
+        self.m_current_frame_number = 0
 
         '''OpenGL的查询机制,这里用于时间戳的查询, 用来获取指令运行的时长'''
         # self.queries         = None
@@ -269,6 +279,7 @@ class Renderer:
         
         :param path: 包含一帧粒子数据的ply文件路径
         """
+        self.m_current_frame_number += 1
         # 读取并绑定粒子数据
         read_start = time.perf_counter()
         vertices, vertices_stride = read_ply(path, self.m_ssf_renderer.m_shader_option)
@@ -338,7 +349,7 @@ class Renderer:
         # gl.glDrawArrays(gl.GL_TRIANGLES, 0, 6)
         
 
-        # 先渲染粒子或者流体数据
+        # 渲染粒子或者流体数据
         if not self.m_ssf_fluid_draw_flag:
             self.m_particle_shader.use()
             self.m_particle_shader.set_mat4('model', self.m_model)
@@ -364,8 +375,8 @@ class Renderer:
             self.m_ssf_renderer.render(self.m_particle_vao, self.m_particle_num, point_scale, self.m_back_ground_texture)
             self.ssf_time = time.perf_counter() - ssf_start
 
-        gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, 0)
-        self.__render_back_ground(light_position)
+        # gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, 0)
+        # self.__render_back_ground(light_position)
 
     def __render_back_ground(self, light_position:glm.vec3):
         """绘制背景"""
@@ -486,6 +497,34 @@ class Renderer:
     def print_window_size(self):
         print(f"width{self.m_width}, height{self.m_height}")
 
+    def save_frame_img(self, save_dir: str, frame_number: int):
+        if self.exit():
+            return
+        """保存当前帧图像"""
+        shader_option_file_prefix_dict = {
+            ShaderOption.Depth: 'depth_',
+            ShaderOption.Thick: 'thcik_',
+            ShaderOption.MultiFrac: 'frac_',
+            ShaderOption.Normal: 'normal_',
+            ShaderOption.Attenuation: 'attenuation_',
+            ShaderOption.MultiAttenuation: 'attenuation_',
+        }
+        file_prefix = shader_option_file_prefix_dict.get(self.m_ssf_renderer.m_shader_option, '')
+        if self.m_ssf_renderer.m_iterations > 0 and self.m_ssf_renderer.m_shader_option in [ShaderOption.Depth, ShaderOption.Thick, ShaderOption.MultiFrac]:
+            file_prefix = 'smooth_' + file_prefix
+        if not self.m_ssf_fluid_draw_flag:
+            file_prefix = 'particle_'
+        data = gl.glReadPixels(0, 0, self.m_width, self.m_height, gl.GL_RGBA, gl.GL_UNSIGNED_BYTE)
+        image = Image.frombytes("RGBA", (self.m_width, self.m_height), data)
+
+        # 在读取之后，图像可能是上下颠倒的，需要翻转
+        image = image.transpose(Image.FLIP_TOP_BOTTOM)
+
+        # 保存图像
+        image.save(os.path.join(save_dir, file_prefix + 'frame_%d.png'%frame_number))
+
+        print('保存第%d帧'%frame_number)
+
 def read_ply(path:str, shader_option:ShaderOption):
     """读取ply文件包含的粒子数据到ndarry中
 
@@ -503,13 +542,14 @@ def read_ply(path:str, shader_option:ShaderOption):
             plydata['vertex']['y'], 
             plydata['vertex']['z'],
         ]
-        vertices_stride = 3
+        vertices_stride = 7
+        num_vertices = len(plydata['vertex']['x'])  # 获取顶点数量
         for i in range(1, 5):
             if f'fluid{i}_frac' in properties:
-                vertices_stride += 1
                 vertices_data.append(plydata['vertex'][f'fluid{i}_frac'])
             else:
-                break
+                # 如果fluid{i}_frac不在properties中，添加一个由0组成的数组
+                vertices_data.append(np.zeros(num_vertices, dtype=np.float32))
         vertices = np.asarray(vertices_data, dtype=np.float32).T.ravel()
     else:
         vertices = np.asarray([
@@ -522,3 +562,39 @@ def read_ply(path:str, shader_option:ShaderOption):
     # vertices = np.asarray([0,0,2,1,0],dtype=np.float32)
     # vertices_stride = 5
     return vertices, vertices_stride
+
+
+# def read_ply(path:str, shader_option:ShaderOption):
+#     """读取ply文件包含的粒子数据到ndarry中
+
+#     :param path: 文件路径
+
+#     :return: 包含粒子位置以及 多相流 粒子的流相比例 的ndarray
+#     """
+#     with open(path, 'rb') as f:
+#         plydata = PlyData.read(f)
+#     # vertices_stride = len(plydata['vertex'].properties)
+#     properties = [property.name for property in plydata['vertex'].properties]
+#     if shader_option in [ShaderOption.MultiFluid, ShaderOption.MultiFrac, ShaderOption.MultiAttenuation, ShaderOption.MultiRefract]:
+#         vertices_data = [
+#             plydata['vertex']['x'], 
+#             plydata['vertex']['y'], 
+#             plydata['vertex']['z'],
+#         ]
+#         vertices_stride = 3
+#         num_vertices = len(plydata['vertex']['x'])  # 获取顶点数量
+#         for i in range(1, 5):
+#             if f'fluid{i}_frac' in properties:
+#                 vertices_stride += 1
+#                 vertices_data.append(plydata['vertex'][f'fluid{i}_frac'])
+#             else:
+#                 break
+#         vertices = np.asarray(vertices_data, dtype=np.float32).T.ravel()
+#     else:
+#         vertices = np.asarray([
+#             plydata['vertex']['x'], 
+#             plydata['vertex']['y'], 
+#             plydata['vertex']['z'],
+#             ], dtype=np.float32).T.ravel()
+#         vertices_stride = 3
+#     return vertices, vertices_stride
