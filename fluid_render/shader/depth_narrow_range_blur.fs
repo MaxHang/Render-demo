@@ -132,8 +132,8 @@ float filter1D(float pixelDepth)
         sampleDepth.y = texture(depthTexture, f_tex.zw).r;
 
         // 对于正负方向来说, 其是关于过滤元素对称的, 故其权重是一样的
-        // w2 = vec2(compute_weight1D(x, two_sigma2));
-        w2 = vec2(compute_weight1D(r, two_sigma2));
+        w2 = vec2(compute_weight1D(x, two_sigma2));
+        // w2 = vec2(compute_weight1D(r, two_sigma2));
         // 修正高斯权重
         ModifiedGaussianFilter1D(sampleDepth.x, w2.x, w2.y, upper1, lower1, lower_clamp, threshold);
         ModifiedGaussianFilter1D(sampleDepth.y, w2.y, w2.x, upper2, lower2, lower_clamp, threshold);
@@ -193,8 +193,8 @@ float filter2D(float pixelDepth)
             sampleDepth.w = texture(depthTexture, f_tex2.zw).r;
 
             r.y += blurRadius.y;
-            // w4   = vec4(compute_weight2D(vec2(x, y), two_sigma2));
-            w4   = vec4(compute_weight2D(r, two_sigma2));
+            w4   = vec4(compute_weight2D(vec2(x, y), two_sigma2));
+            // w4   = vec4(compute_weight2D(r, two_sigma2));
             // w4   = vec4(compute_weight2D(blurRadius * r, two_sigma2));
 
             ModifiedGaussianFilter2D(sampleDepth.x, w4.x, w4.w, upper, lower, lower_clamp, threshold);
